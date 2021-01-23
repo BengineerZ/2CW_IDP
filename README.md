@@ -1,6 +1,8 @@
 # 2CW_IDP
 Repository for the IB IDP coursework!
 
-## Useful Information
+## Summary:
 
-### Deadlines:
+## Deadlines and Deliverables:
+
+[General information and deliverables breakdown](docs/IDP_deliverables_summary.pdf)
