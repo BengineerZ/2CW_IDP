@@ -1,0 +1,517 @@
+#VRML_SIM R2021a utf8
+WorldInfo {
+  basicTimeStep 16
+  coordinateSystem "NUE"
+  contactProperties [
+    ContactProperties {
+      material2 "slippy"
+      coulombFriction [
+        0
+      ]
+    }
+    ContactProperties {
+      material2 "block"
+      coulombFriction [
+        0.01
+      ]
+    }
+  ]
+}
+Viewpoint {
+  orientation -0.18825095021662594 -0.9220683200067977 -0.3381591237603667 2.1947433381347023
+  position -2.546952102256556 2.732329575323112 -1.4048149127786849
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+Floor {
+  size 2.4 2.4
+  appearance Asphalt {
+  }
+}
+DEF Block_R1 Solid {
+  translation 0.196182 0.02497547500002435 -0.617397
+  rotation -0.4069426878568679 0.9089663112092762 0.0904317084126415 -9.428676046033398e-17
+  children [
+    DEF BOX_R Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        metalness 0
+      }
+      geometry Box {
+        size 0.05 0.05 0.05
+      }
+    }
+  ]
+  name "solid(4)"
+  contactMaterial "box"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R2 Solid {
+  translation -0.3003 0.0249755 0.438392
+  rotation 0.26160054897334223 0.9562721584209504 0.13080027448664885 -3.259363507677639e-17
+  children [
+    USE BOX_R
+  ]
+  name "solid(13)"
+  contactMaterial "block"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R3 Solid {
+  translation -0.322652 0.049975474452831584 -0.632112
+  rotation -0.1628555515418307 0.13670612745564503 0.9771333092511416 -2.6178146057642168e-17
+  children [
+    USE BOX_R
+  ]
+  name "solid(12)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R4 Solid {
+  translation 0.720657 0.02497547500002435 -0.155626
+  rotation -0.6555324398758666 0.7539014134814799 0.043702162658382254 -9.755252727159867e-17
+  children [
+    USE BOX_R
+  ]
+  name "solid(7)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_B1 Solid {
+  translation 0.726935 0.02497547500002435 0.782309
+  rotation -0.1745826683715134 0.9846425198539226 -7.605250423927799e-15 9.767880063530864e-17
+  children [
+    DEF BOX_B Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.05 0.05 0.05
+      }
+    }
+  ]
+  name "solid(8)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B2 Solid {
+  translation -0.36819 0.02497547500002435 0.521385
+  rotation 0.40337151093775325 0.4318068096021895 0.8067430218755984 -3.170717042943321e-17
+  children [
+    USE BOX_B
+  ]
+  name "solid(9)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B3 Solid {
+  translation -0.769618 0.02497547500002435 -0.171025
+  rotation 0.09680180870977499 0.9762925018418305 -0.19360361741955054 8.808216440133948e-17
+  children [
+    USE BOX_B
+  ]
+  name "solid(10)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B4 Solid {
+  translation -0.716396 0.02497547500002435 0.289357
+  rotation -0.25595315262544943 0.9321888045466865 -0.25595315262546214 6.66255737947299e-17
+  children [
+    USE BOX_B
+  ]
+  name "solid(11)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Floor_colour Solid {
+  translation 1 0.0001 1
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+      }
+      geometry Plane {
+        size 0.4 0.4
+      }
+    }
+  ]
+  name "solid(6)"
+}
+DEF Floor_colour Solid {
+  translation 1 0.0001 -1
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+      }
+      geometry Plane {
+        size 0.4 0.4
+      }
+    }
+  ]
+  name "solid(5)"
+}
+DEF WALL_1 Solid {
+  translation 1.2 0.05 0
+  children [
+    DEF WALL_SHAPE Shape {
+      appearance PBRAppearance {
+        baseColor 0.12549 0.368627 0.729412
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.02 0.1 2.38
+      }
+    }
+  ]
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_2 Solid {
+  translation -1.2 0.05 0
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(1)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_3 Solid {
+  translation 0 0.05 -1.2
+  rotation 0 1 0 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(2)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_4 Solid {
+  translation 0 0.05 1.2
+  rotation 0 1 0 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(3)"
+  boundingObject USE WALL_SHAPE
+}
+Robot {
+  translation 0.0399979 0.04 0.720002
+  rotation 0 1 0 -3.1415853071795863
+  children [
+    Receiver {
+    }
+    Emitter {
+    }
+    Camera {
+      translation 0 0 0.1
+      width 1
+      height 1
+    }
+    Solid {
+      translation 0 -0.03 0
+      children [
+        Shape {
+          geometry DEF CASTOR_BALL Sphere {
+            radius 0.01
+          }
+        }
+      ]
+      name "solid(2)"
+      contactMaterial "slippy"
+      boundingObject USE CASTOR_BALL
+      physics Physics {
+      }
+    }
+    DEF BODY Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 0.05 0.2
+      }
+    }
+    DEF WHEEL1 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -12.73599273456443
+        anchor 0.06 0 0.05
+      }
+      device [
+        RotationalMotor {
+          name "wheel1"
+          maxTorque 100
+        }
+      ]
+      endPoint Solid {
+        translation 0.06000000000005251 -1.0350908492455448e-08 0.04999907872738454
+        rotation 0.08628699644490166 -0.08628731334637617 -0.9925266010540886 4.704883912502883
+        children [
+          DEF WHEEL Shape {
+            appearance PBRAppearance {
+              baseColor 0.305882 0.898039 0.25098
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.02
+              radius 0.04
+              subdivision 24
+            }
+          }
+        ]
+        boundingObject USE WHEEL
+        physics Physics {
+        }
+      }
+    }
+    DEF WHEEL2 HingeJoint {
+      jointParameters HingeJointParameters {
+        position 12.735992653315295
+        anchor -0.06 0 0.05
+      }
+      device [
+        RotationalMotor {
+          name "wheel2"
+          maxTorque 100
+        }
+      ]
+      endPoint Solid {
+        translation -0.05999999999986491 4.3911082305589606e-07 0.04999917824860853
+        rotation -0.08272575246277818 0.08272605654514131 -0.9931328458207175 4.705494519854461
+        children [
+          USE WHEEL
+        ]
+        name "solid(1)"
+        boundingObject USE WHEEL
+        physics Physics {
+        }
+      }
+    }
+    DEF DS_RIGHT DistanceSensor {
+      translation 0 -0.02 0
+      rotation 0 1 0 -0.7854003061004253
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_right"
+      lookupTable [
+        0 0 0
+        3 3 0.05
+      ]
+    }
+    DEF DS_LEFT DistanceSensor {
+      translation 0 -0.02 0
+      rotation 0 1 0 -2.3561996938995744
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_left"
+      lookupTable [
+        0 0 0
+        3 3 0.05
+      ]
+    }
+    DEF GPS_main GPS {
+      name "gps_main"
+    }
+    DEF COMPASS_MAIN Compass {
+    }
+  ]
+  boundingObject USE BODY
+  physics Physics {
+    density -1
+    mass 1
+  }
+  controller "navigation_controller"
+}
+Robot {
+  translation 1 0.04 -1
+  rotation 0 1 0 -1.5707953071795862
+  children [
+    Receiver {
+    }
+    Emitter {
+    }
+    Camera {
+      translation 0 0 0.1
+      width 1
+      height 1
+    }
+    Solid {
+      translation 0 -0.03 0
+      children [
+        Shape {
+          geometry DEF CASTOR_BALL Sphere {
+            radius 0.01
+          }
+        }
+      ]
+      name "solid(2)"
+      contactMaterial "slippy"
+      boundingObject USE CASTOR_BALL
+      physics Physics {
+      }
+    }
+    DEF BODY Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 0.05 0.2
+      }
+    }
+    DEF WHEEL1 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -12.73599273456443
+        anchor 0.06 0 0.05
+      }
+      device [
+        RotationalMotor {
+          name "wheel1"
+          maxTorque 100
+        }
+      ]
+      endPoint Solid {
+        translation 0.06000000000005251 -1.035090849062628e-08 0.04999907872738454
+        rotation 0.08628699644490159 -0.08628731334637613 -0.9925266010540886 4.704883912502883
+        children [
+          DEF WHEEL Shape {
+            appearance PBRAppearance {
+              baseColor 0.305882 0.898039 0.25098
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.02
+              radius 0.04
+              subdivision 24
+            }
+          }
+        ]
+        boundingObject USE WHEEL
+        physics Physics {
+        }
+      }
+    }
+    DEF WHEEL2 HingeJoint {
+      jointParameters HingeJointParameters {
+        position 12.735992653315295
+        anchor -0.06 0 0.05
+      }
+      device [
+        RotationalMotor {
+          name "wheel2"
+          maxTorque 100
+        }
+      ]
+      endPoint Solid {
+        translation -0.05999999999986491 4.391108230583207e-07 0.04999917824860853
+        rotation -0.0827257524627782 0.08272605654514145 -0.9931328458207175 4.705494519854461
+        children [
+          USE WHEEL
+        ]
+        name "solid(1)"
+        boundingObject USE WHEEL
+        physics Physics {
+        }
+      }
+    }
+    DEF DS_RIGHT DistanceSensor {
+      translation 0 -0.02 0
+      rotation 0 1 0 -0.7854003061004253
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_right"
+      lookupTable [
+        0 0 0
+        3 3 0.05
+      ]
+    }
+    DEF DS_LEFT DistanceSensor {
+      translation 0 -0.02 0
+      rotation 0 1 0 -2.3561996938995744
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_left"
+      lookupTable [
+        0 0 0
+        3 3 0.05
+      ]
+    }
+    DEF GPS_main GPS {
+      name "gps_main"
+    }
+    DEF COMPASS_MAIN Compass {
+    }
+  ]
+  name "robot(1)"
+  boundingObject USE BODY
+  physics Physics {
+    density -1
+    mass 1
+  }
+  controller "navigation_controller"
+}
+Robot {
+  children [
+    Receiver {
+    }
+    Emitter {
+    }
+  ]
+  name "main_computer"
+  controller "master_controller"
+}
