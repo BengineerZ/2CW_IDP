@@ -47,8 +47,31 @@ def pad_grid(occupancy_grid, iterations):
 			occupancy_grid[bound(obstacle_coords[0][i])][bound(obstacle_coords[1][i] - 1)] = 1
 	
 	return occupancy_grid
-		
-occupancy_grid = pad_grid(occupancy_grid, 3)
 
-plt.imshow(occupancy_grid)
-plt.show()
+# current_position = gps.getValues()
+# current_orientation = np.array([compass.getValues()[2], 0, compass.getValues()[0]])
+
+# #convert current_position to grid val
+# x = int(current_position[0] // cellwidth)
+# z = int(current_position[2] // cellwidth)
+# row = 40 - x
+# col = 40 + z
+
+# start = (row, col)
+# sgrid, path = pathfinder.findpath(start, Target, grid)
+
+# next_pos = path[1]
+
+# new_heading_vec = np.subtract(next_pos,start)
+# new_heading_vec = np.array([-new_heading_vec[0], 0, new_heading_vec[1]])
+
+# dot = current_orientation.dot(new_heading_vec)
+# cross = np.cross(current_orientation, new_heading_vec)[1]
+
+# leftSpeed = pd*dot - pc*cross
+# rightSpeed = pd*dot + pc*cross
+
+# occupancy_grid = pad_grid(occupancy_grid, 3)
+
+# plt.imshow(occupancy_grid)
+# plt.show()

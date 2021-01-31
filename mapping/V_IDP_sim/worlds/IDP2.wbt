@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.18825095021662594 -0.9220683200067977 -0.3381591237603667 2.1947433381347023
-  position -2.546952102256556 2.732329575323112 -1.4048149127786849
+  orientation -0.4201532258211184 -0.682572838874998 -0.5979678807948086 2.231602081768363
+  position -0.7302263788147666 5.030227935909879 0.2059537036232731
 }
 TexturedBackground {
 }
@@ -31,7 +31,7 @@ Floor {
   }
 }
 DEF Block_R1 Solid {
-  translation 0.196182 0.02497547500002435 -0.617397
+  translation -0.300987 0.0249755 -0.530086
   rotation -0.4069426878568679 0.9089663112092762 0.0904317084126415 -9.428676046033398e-17
   children [
     DEF BOX_R Shape {
@@ -51,7 +51,7 @@ DEF Block_R1 Solid {
   }
 }
 DEF Block_R2 Solid {
-  translation -0.3003 0.0249755 0.438392
+  translation -0.84762 0.0249755 -0.0290393
   rotation 0.26160054897334223 0.9562721584209504 0.13080027448664885 -3.259363507677639e-17
   children [
     USE BOX_R
@@ -63,7 +63,7 @@ DEF Block_R2 Solid {
   }
 }
 DEF Block_R3 Solid {
-  translation -0.322652 0.049975474452831584 -0.632112
+  translation 0.46896 0.0499755 -0.282441
   rotation -0.1628555515418307 0.13670612745564503 0.9771333092511416 -2.6178146057642168e-17
   children [
     USE BOX_R
@@ -74,7 +74,7 @@ DEF Block_R3 Solid {
   }
 }
 DEF Block_R4 Solid {
-  translation 0.720657 0.02497547500002435 -0.155626
+  translation 0.716163 0.0249755 0.36138
   rotation -0.6555324398758666 0.7539014134814799 0.043702162658382254 -9.755252727159867e-17
   children [
     USE BOX_R
@@ -85,7 +85,7 @@ DEF Block_R4 Solid {
   }
 }
 DEF Block_B1 Solid {
-  translation 0.726935 0.02497547500002435 0.782309
+  translation -0.706891 0.0249755 0.784631
   rotation -0.1745826683715134 0.9846425198539226 -7.605250423927799e-15 9.767880063530864e-17
   children [
     DEF BOX_B Shape {
@@ -104,7 +104,7 @@ DEF Block_B1 Solid {
   }
 }
 DEF Block_B2 Solid {
-  translation -0.36819 0.02497547500002435 0.521385
+  translation 0.801057 0.0249755 -0.489113
   rotation 0.40337151093775325 0.4318068096021895 0.8067430218755984 -3.170717042943321e-17
   children [
     USE BOX_B
@@ -115,7 +115,7 @@ DEF Block_B2 Solid {
   }
 }
 DEF Block_B3 Solid {
-  translation -0.769618 0.02497547500002435 -0.171025
+  translation 0.16868 0.0249755 0.790924
   rotation 0.09680180870977499 0.9762925018418305 -0.19360361741955054 8.808216440133948e-17
   children [
     USE BOX_B
@@ -126,7 +126,7 @@ DEF Block_B3 Solid {
   }
 }
 DEF Block_B4 Solid {
-  translation -0.716396 0.02497547500002435 0.289357
+  translation -0.833101 0.0249755 -0.831707
   rotation -0.25595315262544943 0.9321888045466865 -0.25595315262546214 6.66255737947299e-17
   children [
     USE BOX_B
@@ -152,6 +152,7 @@ DEF Floor_colour Solid {
 }
 DEF Floor_colour Solid {
   translation 1 0.0001 -1
+  rotation 0 1 0 4.692820414042842e-06
   children [
     Shape {
       appearance PBRAppearance {
@@ -169,7 +170,7 @@ DEF WALL_1 Solid {
   children [
     DEF WALL_SHAPE Shape {
       appearance PBRAppearance {
-        baseColor 0.12549 0.368627 0.729412
+        baseColor 0.45098 0.823529 0.0862745
         roughness 1
         metalness 0
       }
@@ -207,7 +208,7 @@ DEF WALL_4 Solid {
   boundingObject USE WALL_SHAPE
 }
 Robot {
-  translation 0.0399979 0.04 0.720002
+  translation 0.988308 0.04 0.984104
   rotation 0 1 0 -3.1415853071795863
   children [
     Receiver {
@@ -216,8 +217,10 @@ Robot {
     }
     Camera {
       translation 0 0 0.1
+      rotation 0 1 0 -3.141592653589793
       width 1
       height 1
+      far 0.08
     }
     Solid {
       translation 0 -0.03 0
@@ -256,8 +259,8 @@ Robot {
         }
       ]
       endPoint Solid {
-        translation 0.06000000000005251 -1.0350908492455448e-08 0.04999907872738454
-        rotation 0.08628699644490166 -0.08628731334637617 -0.9925266010540886 4.704883912502883
+        translation 0.06000000000005251 -1.0350908424815764e-08 0.04999907872738452
+        rotation 0.08628699644493697 -0.0862873133463763 -0.9925266010540853 4.704883912503158
         children [
           DEF WHEEL Shape {
             appearance PBRAppearance {
@@ -289,8 +292,8 @@ Robot {
         }
       ]
       endPoint Solid {
-        translation -0.05999999999986491 4.3911082305589606e-07 0.04999917824860853
-        rotation -0.08272575246277818 0.08272605654514131 -0.9931328458207175 4.705494519854461
+        translation -0.05999999999986491 4.3911082301876934e-07 0.04999917824860852
+        rotation -0.08272575246279996 0.08272605654514505 -0.9931328458207154 4.705494519854602
         children [
           USE WHEEL
         ]
@@ -318,7 +321,7 @@ Robot {
       name "ds_right"
       lookupTable [
         0 0 0
-        3 3 0.05
+        3 3 0.02
       ]
     }
     DEF DS_LEFT DistanceSensor {
@@ -339,7 +342,7 @@ Robot {
       name "ds_left"
       lookupTable [
         0 0 0
-        3 3 0.05
+        3 3 0.02
       ]
     }
     DEF GPS_main GPS {
@@ -348,23 +351,27 @@ Robot {
     DEF COMPASS_MAIN Compass {
     }
   ]
+  name "red"
   boundingObject USE BODY
   physics Physics {
     density -1
     mass 1
   }
-  controller "navigation_controller"
+  controller "slave_controller"
 }
 Robot {
-  translation 1 0.04 -1
-  rotation 0 1 0 -1.5707953071795862
+  translation 0.994636 0.04 -0.963939
+  rotation 0 1 0 1.01503e-06
   children [
     Receiver {
+      channel 1
     }
     Emitter {
+      channel 1
     }
     Camera {
       translation 0 0 0.1
+      rotation 0 1 0 3.141592653589793
       width 1
       height 1
     }
@@ -385,7 +392,7 @@ Robot {
     }
     DEF BODY Shape {
       appearance PBRAppearance {
-        baseColor 1 0 0
+        baseColor 0 0 1
         roughness 1
         metalness 0
       }
@@ -405,8 +412,8 @@ Robot {
         }
       ]
       endPoint Solid {
-        translation 0.06000000000005251 -1.035090849062628e-08 0.04999907872738454
-        rotation 0.08628699644490159 -0.08628731334637613 -0.9925266010540886 4.704883912502883
+        translation 0.06000000000005251 -1.0350908485385979e-08 0.04999907872738454
+        rotation 0.08628699644490093 -0.08628731334637449 -0.9925266010540887 4.7048839125029005
         children [
           DEF WHEEL Shape {
             appearance PBRAppearance {
@@ -438,8 +445,8 @@ Robot {
         }
       ]
       endPoint Solid {
-        translation -0.05999999999986491 4.391108230583207e-07 0.04999917824860853
-        rotation -0.0827257524627782 0.08272605654514145 -0.9931328458207175 4.705494519854461
+        translation -0.05999999999986491 4.391108230574329e-07 0.04999917824860853
+        rotation -0.08272575246277736 0.08272605654514169 -0.9931328458207176 4.705494519854465
         children [
           USE WHEEL
         ]
@@ -467,7 +474,7 @@ Robot {
       name "ds_right"
       lookupTable [
         0 0 0
-        3 3 0.05
+        3 3 0.02
       ]
     }
     DEF DS_LEFT DistanceSensor {
@@ -488,7 +495,7 @@ Robot {
       name "ds_left"
       lookupTable [
         0 0 0
-        3 3 0.05
+        3 3 0.02
       ]
     }
     DEF GPS_main GPS {
@@ -497,21 +504,23 @@ Robot {
     DEF COMPASS_MAIN Compass {
     }
   ]
-  name "robot(1)"
+  name "blue"
   boundingObject USE BODY
   physics Physics {
     density -1
     mass 1
   }
-  controller "navigation_controller"
+  controller "slave_controller"
 }
 Robot {
   children [
     Receiver {
+      channel -1
     }
     Emitter {
+      channel -1
     }
   ]
   name "main_computer"
-  controller "master_controller"
+  controller "master_controller_2"
 }
