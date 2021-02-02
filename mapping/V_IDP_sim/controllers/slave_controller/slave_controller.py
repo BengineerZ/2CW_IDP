@@ -14,6 +14,17 @@ TIME_STEP = 64
 # create the Robot instance.
 robot = Robot()
 
+gripper_left_motor = robot.getDevice("Lmotor")
+gripper_right_motor = robot.getDevice("Rmotor")
+
+# gripper_right_motor.setMinPosition(0)
+# gripper_right_motor.setMaxPosition(0.9)
+# gripper_left_motor.setMinPosition(0)
+# gripper_left_motor.setMaxPosition(0.9)
+
+gripper_right_motor.setAvailableTorque(0.2)
+gripper_left_motor.setAvailableTorque(0.2)
+
 # get the motor devices
 leftMotor = robot.getDevice('wheel1')
 rightMotor = robot.getDevice('wheel2')
@@ -63,6 +74,15 @@ def send_robot_state(robot_id, state, distance, colour):
 	message = struct.pack('idddddi', robot_id, state[0], state[1], state[2], distance[0], distance[1], colour)
 	emitter.send(message)
 
+def grip(grip_pos):
+	if grip_pos == 1:
+		gripper_left_motor.setPosition(0.1)
+		gripper_right_motor.setPosition(0.1)
+	else:
+		gripper_left_motor.setPosition(0.9)
+		gripper_right_motor.setPosition(0.9)
+
+grip(0)
 
 while robot.step(TIME_STEP) != -1:
 
@@ -106,7 +126,7 @@ while robot.step(TIME_STEP) != -1:
 			if dataList[0] == robot_id:
 				leftMotor.setVelocity(dataList[1])
 				rightMotor.setVelocity(dataList[2])
-				# gripper.setPosition(dataList[3])
+				grip(dataList[3])
 		receiver.nextPacket()
 		queue_length = receiver.getQueueLength()
 

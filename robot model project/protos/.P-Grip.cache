@@ -1,0 +1,11 @@
+Webots Proto Cache File version 1.5
+protoFileHash: 778e77adff6a5465c7a0152a2f5c5d83
+needsRobotAncestor: 1
+baseType: Solid
+slotType: 
+parameters: translation,rotation,name,model,mainColor,secondaryColor
+tags: 
+license:  Apache License 2.0
+licenseUrl:  http://www.apache.org/licenses/LICENSE-2.0
+documentationUrl: https://www.cyberbotics.com/doc/guide/p-rob3
+info: A\sP-Grip\sgripper\srom\sF&P\sRobotics\n

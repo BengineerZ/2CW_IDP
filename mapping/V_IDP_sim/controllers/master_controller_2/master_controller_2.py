@@ -238,6 +238,17 @@ def bspline(cv, n=100, degree=3, periodic=False):
     # Calculate result
     return np.array(si.splev(u, (kv,cv.T,degree))).T
 
+class robot_manager:
+	def __init__(self):
+		self.data = None
+
+	def __call__(self):
+		initiate_data_transfer()
+		self.data , update = await_state_data()
+
+
+
+
 ### occupancy defs
 
 occupancy_grid = np.full((80,80), 0.5)

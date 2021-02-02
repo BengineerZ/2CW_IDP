@@ -48,6 +48,48 @@ def pad_grid(occupancy_grid, iterations):
 	
 	return occupancy_grid
 
+
+
+
+
+class robot_manager:
+
+	def __init__(self, robot_id):
+		self.id = 0
+		self.state = ['idle', {}]
+		self.set_state('idle')
+		print('initialise')
+
+	def __call__(self):
+		print('called')
+		print(self.state[0])
+		getattr(self, self.state[0])(self.state[1] if len(self.state[1]) > 0 else None)
+		
+
+	def idle(self, args):
+		print('....')
+
+	def sweep(self, args):
+		print(args['speed'])
+		print(args['angle'])
+		
+	def set_state(self, state_function, **args):
+		self.state[0] = state_function
+		self.state[1] = args
+
+
+	
+
+robot_0 = robot_manager()
+robot_0()
+for i in range(3):
+	
+	robot_0.set_state(0, 'sweep', speed = 2, angle = np.pi/2)
+	robot_0()
+
+
+
+
 # current_position = gps.getValues()
 # current_orientation = np.array([compass.getValues()[2], 0, compass.getValues()[0]])
 
