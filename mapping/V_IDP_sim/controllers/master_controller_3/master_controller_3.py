@@ -28,7 +28,7 @@ receiver.setChannel(Receiver.CHANNEL_BROADCAST)
 #robot_extent = np.mgrid[-3:4, 6:-7:-1].reshape(2, -1).T
 
 robot_extent = np.array([[6, -4],[-7, -4],[-7, 4],[6, 3]])
-print(robot_extent)
+#print(robot_extent)
 
 
 
@@ -96,7 +96,7 @@ def convert_to_grid_space(coord):
 	return np.flip((np.array(coord)*[100, -100] + np.array([119, 119]))/3)
 
 #### generic robot motion defs
-def robot_motion(state, target, pd, pc):
+def robot_motion(state, target, pd, pc, info=False):
 
 	current_orientation = np.array([-np.cos(state[2]), 0, -np.sin(state[2])])
 	current_position = convert_to_grid_space(state[0:2])
@@ -110,7 +110,10 @@ def robot_motion(state, target, pd, pc):
 	leftSpeed = pd*dot + pc*cross
 	rightSpeed = pd*dot - pc*cross
 
-	return leftSpeed, rightSpeed
+	if info:
+		return leftSpeed, rightSpeed, cross
+	else:
+		return leftSpeed, rightSpeed
 
 def bspline(cv, n=100, degree=3, periodic=False):
     """ Calculate n samples on a bspline
@@ -157,16 +160,15 @@ class robot_manager:
 		self.set_state('idle')
 		self.robot_data = None
 		self.driving_grid = np.full((80,80), 0)
+		self.reduced_driving_grid = np.full((80,80), 0)
 		self.current_path = []
 
 
 
 		# state utility vars
 		self._spin = False
-		self._dist_temp = [1000,1000,1000,1000, None, None, None, None]
-		self._block_found = False
-		self._block_pos_temp = np.array([0,0])
 
+		self._block_pos_temp = np.array([0,0])
 		self._angle_index = 0
 		self._dist_array = []
 		
@@ -182,7 +184,22 @@ class robot_manager:
 
 	# convention for state defs: use dict of args even if not needed
 	def idle(self, args):
-		set_robot_state(self.robot_id, [0,0], 0)
+		if args:
+			if 'grip' in args:
+				set_robot_state(self.robot_id, [0,0], args['grip'])
+			else:
+				set_robot_state(self.robot_id, [0,0], 0)
+		else:
+			set_robot_state(self.robot_id, [0,0], 0)
+
+	def blocked(self, args):
+		if args:
+			if 'grip' in args:
+				set_robot_state(self.robot_id, [0,0], args['grip'])
+			else:
+				set_robot_state(self.robot_id, [0,0], 0)
+		else:
+			set_robot_state(self.robot_id, [0,0], 0)
 
 	def sweep(self, args):
 
@@ -210,12 +227,15 @@ class robot_manager:
 		current_pos = (int(current_pos[0]), int(current_pos[1]))
 		#obstacle_grid = args['obstacle_grid']
 		obstacle_grid = self.driving_grid
+		reduced_obstacle_grid = self.reduced_driving_grid
+
 		if args['block'] == True:
 			rr, cc = ellipse(args['target'][0] , args['target'][1], 9,9, shape=self.driving_grid.shape)
 			for i in range(len(rr)):
 				obstacle_grid[bound(rr[i]), bound(cc[i])] = 0
-		if args['empty'] == True:
+				reduced_obstacle_grid[bound(rr[i]), bound(cc[i])] = 0
 
+		if args['empty'] == True:
 			rad = blue_bot.current_angle()
 			robot_state = np.array([current_pos[0], current_pos[1], rad])
 			robot_extent_global = np.array([[0,0],[0,0],[0,0],[0,0]])
@@ -223,8 +243,12 @@ class robot_manager:
 				robot_extent_global[i] = np.rint((transform_local_coords(robot_state, robot_extent[i])))
 			robot_extent_global = np.transpose(robot_extent_global)
 			rr, cc = polygon(robot_extent_global[0], robot_extent_global[1])
-			obstacle_grid[rr, cc] = 0
-
+			for i in range(len(rr)):
+				obstacle_grid[bound(rr[i]), bound(cc[i])] = 0
+				reduced_obstacle_grid[bound(rr[i]), bound(cc[i])] = 0
+			#obstacle_grid[rr, cc] = 0
+			#reduced_obstacle_grid[rr, cc] = 0
+		#print(obstacle_grid[args['target'][0], args['target'][1]])
 		path_temp = findpath(current_pos, args['target'], obstacle_grid)
 		#print(path_temp)
 		if path_temp:
@@ -234,31 +258,55 @@ class robot_manager:
 				if len(path) > args['early_stop']:
 						set_robot_state(self.robot_id, robot_motion(robot_data[self.robot_id][1:4], path[1], 1.5, 1), args['grip'])
 				else:
-					if 'state' in args:
-						#self.set_state(args['state'])
-						set_robot_state(self.robot_id, [0,0], args['grip'])
-					else:
-						set_robot_state(self.robot_id, robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1), args['grip'])
+					motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
+					set_robot_state(self.robot_id, [np.sign(motion[2])*0.6, -np.sign(motion[2])*0.6], args['grip'])
+					if np.abs(motion[2]) < 0.05:
+						self.set_state('idle', grip = args['grip'])
+						self.current_path = []
 			else:
-				#set_robot_state(self.robot_id, robot_motion(robot_data[self.robot_id][1:4], args['target'], 0, 1), args['grip'])
-				self.set_state('idle')
+				self.set_state('idle', grip = args['grip'])
+				self.current_path = []
 		else:
 			#print(args['target'])
-			print('no path possible')
+			obstacle_count = 0
+			if len(self.current_path) > 0:
+				for i in range(len(self.current_path) if len(self.current_path) <= 6 else 6):
+					if obstacle_grid[int(self.current_path[i][0]), int(self.current_path[i][1])] == 1:
+						obstacle_count = obstacle_count + 1
+			print(obstacle_count)
+
+			if obstacle_count >= 3:
+				print('no path possible ... reducing driving grid')
+
+				path_temp = findpath(current_pos, args['target'], reduced_obstacle_grid)
+				#print(path_temp)
+				if path_temp:
+					if len(path_temp) > 1:
+						path = bspline(np.asarray(path_temp), int(np.sqrt((current_pos[0] - args['target'][0])**2 + (current_pos[1] - args['target'][1])**2)/2), 9)
+						self.current_path = path
+						if len(path) > args['early_stop']:
+								set_robot_state(self.robot_id, robot_motion(robot_data[self.robot_id][1:4], path[1], 1.5, 1), args['grip'])
+						else:
+							motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
+							set_robot_state(self.robot_id, [np.sign(motion[2])*0.6, -np.sign(motion[2])*0.6], args['grip'])
+							if np.abs(motion[2]) < 0.05:
+								self.set_state('idle', grip = args['grip'])
+								self.current_path = []
+					else:
+						self.set_state('idle', grip = args['grip'])
+						self.current_path = []
+				else:
+					print('no reduced path possible, state set to: "blocked"')
+					self.set_state('blocked', grip = args['grip'])
+					self.current_path = []
+
+			else:
+				print('returning to path')
+				#self.set_state('blocked', grip = args['grip'])
+				#self.current_path = []
+
 
 	def block_extent_routine(self, args):
-
-		def check_block_size():
-			if self._dist_temp[5] > 0 and self._dist_temp[4] < 0 and np.abs(self._dist_temp[4]) < np.abs(self._dist_temp[5]):
-				block_size = np.abs(self._dist_temp[5] - self._dist_temp[4] + 2*np.pi)
-				print('test')
-			elif self._dist_temp[5] > 0 and self._dist_temp[4] < 0 and np.abs(self._dist_temp[4]) > np.abs(self._dist_temp[5]):
-				block_size = np.abs(self._dist_temp[5] - self._dist_temp[4] - 2*np.pi)
-				print('test')
-			else:
-				block_size = np.abs(self._dist_temp[5] - self._dist_temp[4])
-
-			return block_size
 
 		original_block_angle = np.arctan2((args['target'][1] - self.current_position(grid=False)[1]),(-args['target'][0] + self.current_position(grid=False)[0])) - np.pi/4
 		#print(original_block_angle)
@@ -280,15 +328,11 @@ class robot_manager:
 			else:
 				self.set_heading(desired_angle, 15)
 
-			
-
-			
-
 			current_orientation = np.array([-np.cos(self.current_angle()), 0, -np.sin(self.current_angle())])
 			desired_orientation = np.array([-np.cos(desired_angle), 0, -np.sin(desired_angle)])
 			cross_start = -np.cross(current_orientation, desired_orientation)[1]
 			if np.abs(cross_start) < 0.01:
-				print(self._angle_index)
+				#print(self._angle_index)
 				self._angle_index = self._angle_index + 1
 				self._dist_array.append(self.robot_data[self.robot_id][5])
 		else:
@@ -297,27 +341,36 @@ class robot_manager:
 			# falling_mask = ((np.array(self._dist_array[:-1]) > trigger_value) & (np.array(self._dist_array[1:]) < trigger_value))
 			# print(np.flatnonzero(rising_mask) +1)
 			# print(np.flatnonzero(falling_mask) +1)
-			print(np.array(self._dist_array)*-1)
+			#print(np.array(self._dist_array)*-1)
 			peaks, _ = find_peaks(np.array(self._dist_array)*-1, height=(-0.35, 0), width=3)
-			print(self._dist_array[peaks[0]])
+			#print(self._dist_array[peaks[0]])
 
-			
-			if sweep_angles[peaks[0]] + np.pi/4 > np.pi:
-				exact_angle = sweep_angles[peaks[0]] + np.pi/4 - np.pi*2
-			elif sweep_angles[peaks[0]] + np.pi/4 < -np.pi:
-				exact_angle = sweep_angles[peaks[0]] + np.pi/4 + np.pi*2
+			if len(peaks) == 0:
+				print('no block found')
+				self.set_state('idle')
 			else:
-				exact_angle = sweep_angles[peaks[0]] + np.pi/4
+				if sweep_angles[peaks[0]] + np.pi/4 > np.pi:
+					exact_angle = sweep_angles[peaks[0]] + np.pi/4 - np.pi*2
+				elif sweep_angles[peaks[0]] + np.pi/4 < -np.pi:
+					exact_angle = sweep_angles[peaks[0]] + np.pi/4 + np.pi*2
+				else:
+					exact_angle = sweep_angles[peaks[0]] + np.pi/4
 
-			exact_position = convert_to_grid_coords(transform_local_coords([self.robot_data[self.robot_id][1], self.robot_data[self.robot_id][2], exact_angle], [0,self._dist_array[peaks[0]]]))
-			self.set_heading(exact_angle, 5)
-			print(exact_position)
-			self._block_pos_temp = np.array([int(exact_position[0]), int(exact_position[1])])
+				
+				cross = self.set_heading(exact_angle, 5, info=True)
+				#print(exact_position)
+				if np.abs(cross) < 0.04:
+					exact_position = convert_to_grid_coords(transform_local_coords([self.robot_data[self.robot_id][1], self.robot_data[self.robot_id][2], exact_angle], [0,self._dist_array[peaks[0]]]))
+					self._block_pos_temp = np.array([int(exact_position[0]), int(exact_position[1])])
+					self.set_state('go_to_target', target = self._block_pos_temp, early_stop = 2, grip = 0, block= True, empty=False)
 
-	def get_block_colour(self, args):
+	def block_colour_pickup_routine(self, args):
+		print(self.robot_data[self.robot_id][6])
+		
+		
+
+		
 		pass
-
-
 	def raw(self, args):
 		set_robot_state(self.robot_id, args['wheels'], args['gripper'])
 		
@@ -331,16 +384,18 @@ class robot_manager:
 	def current_angle(self):
 		return robot_data[self.robot_id][3]
 
-	def update_driveable_area(self, overall_driving_grid):
-		self.driving_grid = np.copy(overall_driving_grid)
+	def update_driveable_area(self, driving_grid, reduced_driving_grid):
+		self.driving_grid = np.copy(driving_grid)
+		self.reduced_driving_grid = np.copy(reduced_driving_grid)
 		other_bot = convert_to_grid_coords(robot_data[(self.robot_id+1)%2][1:3])
-		rr, cc = ellipse(int(other_bot[0]) , int(other_bot[1]), 12,12, shape=overall_driving_grid.shape)
+		rr, cc = ellipse(int(other_bot[0]) , int(other_bot[1]), 12,12, shape=driving_grid.shape)
 		for i in range(len(rr)):
 			self.driving_grid[bound(rr[i]), bound(cc[i])] = 1
+			self.reduced_driving_grid[bound(rr[i]), bound(cc[i])] = 1
 
-		return self.driving_grid
+		#return self.driving_grid
 
-	def set_heading(self, desired_angle, speed):
+	def set_heading(self, desired_angle, speed, info=False):
 		if desired_angle > np.pi:
 			desired_angle = desired_angle - np.pi*2
 		elif desired_angle < -np.pi:
@@ -349,6 +404,8 @@ class robot_manager:
 		desired_orientation = np.array([-np.cos(desired_angle), 0, -np.sin(desired_angle)])
 		cross_start = -np.cross(current_orientation, desired_orientation)[1]
 		set_robot_state(self.robot_id, [cross_start*speed, -cross_start*speed], 0)
+		if info:
+			return cross_start
 
 ### environment defs
 
@@ -380,9 +437,9 @@ def block_padding(blocks, occupancy_grid):
 
 def pad_grid(occupancy_grid, iterations):
 
-	occupancy_grid = gaussian(occupancy_grid, sigma = 2)
-	occupancy_grid[occupancy_grid > 0.05] = 1
-	occupancy_grid[occupancy_grid <= 0.05] = 0
+	occupancy_grid = gaussian(occupancy_grid, sigma = 2.5)
+	occupancy_grid[occupancy_grid > 0.04] = 1
+	occupancy_grid[occupancy_grid <= 0.04] = 0
 	
 	return occupancy_grid
 
@@ -471,7 +528,7 @@ class environment_manager:
 		rr, cc = rectangle((4,65), (13,74), shape=final_grid.shape)
 		final_grid[rr, cc] = 0
 
-		
+		reduced_grid = np.copy(final_grid)
 
 		final_grid = block_padding(self.blocks, final_grid)
 
@@ -479,7 +536,13 @@ class environment_manager:
 		# for i in range(len(rr)):
 		# 	final_grid[bound(rr[i]), bound(cc[i])] = 1
 
-		return final_grid
+		return final_grid, reduced_grid
+
+	def remove_block(self, target):
+		rr, cc = ellipse(int(blue_bot._block_pos_temp[0]) , int(blue_bot._block_pos_temp[1]), 4,4)
+		for i in range(len(rr)):
+			environment.occupancy_grid[bound(rr[i]), bound(cc[i])] = 0.2
+
 
 
 
@@ -548,26 +611,27 @@ while robot.step(TIME_STEP) != -1:
 			first_block = np.array([int(blocks[0][0]), int(blocks[0][1])])
 			blue_bot.set_state('go_to_target', target = first_block, obstacle_grid = blue_bot.driving_grid, early_stop = 5, grip = 0, block= True, empty=False, state='idle')
 			print(first_block)
-		if n == 280:
+		if n == 350:
 			#blue_bot.set_state('go_to_target', target = (5,5), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 1, block= False, empty=True)
 			blue_bot.set_state('block_extent_routine', target = first_block)
 
 		if n == 500:
-			blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 1, grip = 0, block= True, empty=False, state='idle')
-
+			#blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= True, empty=False, state='idle')
+			pass
 		if n == 520:
-			blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 1, grip = 1, block= True, empty=False, state='idle')
+			blue_bot.set_state('block_colour_pickup_routine')
+		# 	blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 1, grip = 1, block= True, empty=False, state='idle')
 
-			rr, cc = ellipse(int(blue_bot._block_pos_temp[0]) , int(blue_bot._block_pos_temp[1]), 4,4)
-			for i in range(len(rr)):
-				environment.occupancy_grid[bound(rr[i]), bound(cc[i])] = 0.2
+		# 	rr, cc = ellipse(int(blue_bot._block_pos_temp[0]) , int(blue_bot._block_pos_temp[1]), 4,4)
+		# 	for i in range(len(rr)):
+		# 		environment.occupancy_grid[bound(rr[i]), bound(cc[i])] = 0.2
 
-		if n == 600:
-			blue_bot.set_state('go_to_target', target = (8,8), obstacle_grid = blue_bot.driving_grid, early_stop = 1, grip = 1, block= False, empty=True, state='idle')
+		# if n == 600:
+		# 	blue_bot.set_state('go_to_target', target = (8,8), obstacle_grid = blue_bot.driving_grid, early_stop = 1, grip = 1, block= False, empty=True, state='idle')
 
 
-		if n > 700:
-			blue_bot.set_state('go_to_target', target = (8,8), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= False, empty=True)
+		# if n > 700:
+		# 	blue_bot.set_state('go_to_target', target = (8,8), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= False, empty=True)
 			
 
 
@@ -587,18 +651,21 @@ while robot.step(TIME_STEP) != -1:
 
 
 
-		
+		print(blue_bot.state[0])
 		
 		test = np.copy(blue_bot.driving_grid)
 		for i in range(len(blue_bot.current_path)):
 			test[int(blue_bot.current_path[i][0]), int(blue_bot.current_path[i][1])] = 0.5
-		driving_grid = environment.driving_grid()
 
-		blue_bot.update_driveable_area(driving_grid)
-		red_bot.update_driveable_area(driving_grid)
+		driving_grid, reduced_driving_grid = environment.driving_grid()
+		blue_bot.update_driveable_area(driving_grid, reduced_driving_grid)
+		red_bot.update_driveable_area(driving_grid, reduced_driving_grid)
 
 		occupancy_grid, blocks = environment.find_blocks()
 		environment.update_binary_occupancy_grid(robot_data)
+
+		print(blocks)
+
 		red_bot()
 		blue_bot()
 
