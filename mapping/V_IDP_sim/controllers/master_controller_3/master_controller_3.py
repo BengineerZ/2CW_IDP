@@ -171,11 +171,15 @@ class robot_manager:
 		self._block_pos_temp = np.array([0,0])
 		self._angle_index = 0
 		self._dist_array = []
+		self._block_col_temp = 0
+		self.carrying = False
 		
 
 	def __call__(self):
 
-		getattr(self, self.state[0])(self.state[1] if len(self.state[1]) > 0 else None)
+		return getattr(self, self.state[0])(self.state[1] if len(self.state[1]) > 0 else None)
+
+		
 		
 
 	def set_state(self, state_function, **args):
@@ -259,7 +263,7 @@ class robot_manager:
 						set_robot_state(self.robot_id, robot_motion(robot_data[self.robot_id][1:4], path[1], 1.5, 1), args['grip'])
 				else:
 					motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
-					set_robot_state(self.robot_id, [np.sign(motion[2])*0.6, -np.sign(motion[2])*0.6], args['grip'])
+					set_robot_state(self.robot_id, [np.sign(motion[2])*0.4, -np.sign(motion[2])*0.4], args['grip'])
 					if np.abs(motion[2]) < 0.05:
 						self.set_state('idle', grip = args['grip'])
 						self.current_path = []
@@ -288,7 +292,7 @@ class robot_manager:
 								set_robot_state(self.robot_id, robot_motion(robot_data[self.robot_id][1:4], path[1], 1.5, 1), args['grip'])
 						else:
 							motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
-							set_robot_state(self.robot_id, [np.sign(motion[2])*0.6, -np.sign(motion[2])*0.6], args['grip'])
+							set_robot_state(self.robot_id, [np.sign(motion[2])*0.4, -np.sign(motion[2])*0.4], args['grip'])
 							if np.abs(motion[2]) < 0.05:
 								self.set_state('idle', grip = args['grip'])
 								self.current_path = []
@@ -347,6 +351,8 @@ class robot_manager:
 
 			if len(peaks) == 0:
 				print('no block found')
+				self._angle_index = 0
+				self._dist_array = []
 				self.set_state('idle')
 			else:
 				if sweep_angles[peaks[0]] + np.pi/4 > np.pi:
@@ -361,16 +367,11 @@ class robot_manager:
 				#print(exact_position)
 				if np.abs(cross) < 0.04:
 					exact_position = convert_to_grid_coords(transform_local_coords([self.robot_data[self.robot_id][1], self.robot_data[self.robot_id][2], exact_angle], [0,self._dist_array[peaks[0]]]))
+					self._angle_index = 0
+					self._dist_array = []
 					self._block_pos_temp = np.array([int(exact_position[0]), int(exact_position[1])])
 					self.set_state('go_to_target', target = self._block_pos_temp, early_stop = 2, grip = 0, block= True, empty=False)
 
-	def block_colour_pickup_routine(self, args):
-		print(self.robot_data[self.robot_id][6])
-		
-		
-
-		
-		pass
 	def raw(self, args):
 		set_robot_state(self.robot_id, args['wheels'], args['gripper'])
 		
@@ -406,6 +407,15 @@ class robot_manager:
 		set_robot_state(self.robot_id, [cross_start*speed, -cross_start*speed], 0)
 		if info:
 			return cross_start
+
+	def get_block_state(self, pickup=False):
+		colour = self.robot_data[self.robot_id][6]
+		coord = self._block_pos_temp
+
+		self._block_col_temp = 0
+		self._block_pos_temp = np.array([0,0])
+
+		return coord, colour, pickup
 
 ### environment defs
 
@@ -448,11 +458,14 @@ class environment_manager:
 	def __init__(self):
 		print('initialise environment')
 		self.occupancy_grid = np.full((80,80), 0.5)
-		self.blocks = []
+		self.detected_blocks = []
+		self.blocks = np.array([])
+		#self.block_dict = 
 
-	def __call__(self, ):
+	def __call__(self):
 		#print('occupancy_grid update')
-		pass
+
+		self.combine_coord_sets()
 
 	def update_binary_occupancy_grid(self, robot_data):
 		for i in [0,1]:
@@ -506,9 +519,9 @@ class environment_manager:
 
 		final_grid = gaussian(final_grid, sigma = 0.4)
 
-		self.blocks = blob_dog((final_grid),min_sigma=1.5, max_sigma=2.3, threshold=0.01, overlap = 0.4)
+		self.detected_blocks = blob_dog((final_grid),min_sigma=1.5, max_sigma=2.3, threshold=0.01, overlap = 0.4)
 		
-		return final_grid, self.blocks
+		return final_grid, self.detected_blocks
 
 	def driving_grid(self):
 
@@ -530,7 +543,7 @@ class environment_manager:
 
 		reduced_grid = np.copy(final_grid)
 
-		final_grid = block_padding(self.blocks, final_grid)
+		final_grid = block_padding(self.detected_blocks, final_grid)
 
 		# rr, cc = ellipse(int(other_bot[0]) , int(other_bot[1]), 9,9, shape=final_grid.shape)
 		# for i in range(len(rr)):
@@ -539,9 +552,66 @@ class environment_manager:
 		return final_grid, reduced_grid
 
 	def remove_block(self, target):
-		rr, cc = ellipse(int(blue_bot._block_pos_temp[0]) , int(blue_bot._block_pos_temp[1]), 4,4)
-		for i in range(len(rr)):
-			environment.occupancy_grid[bound(rr[i]), bound(cc[i])] = 0.2
+
+		combined_set = np.copy(self.blocks)
+		dist = []
+		for j in range(len(self.blocks)):
+			dist.append(np.linalg.norm(target - self.blocks[j][0:2]))
+
+		if min(dist) <= 4:
+			#combined_set[dist.index(min(dist))] = coords_col
+			combined_set = np.delete(combined_set, dist.index(min(dist)), axis = 0)
+			self.blocks = combined_set
+
+			rr, cc = ellipse(target[0] , target[1], 4,4)
+			for i in range(len(rr)):
+				environment.occupancy_grid[bound(rr[i]), bound(cc[i])] = 0.2
+
+
+	def combine_coord_sets(self):
+		# allows for order preservation as well as minor deviations in block position
+		new_blocks = np.copy(self.detected_blocks)
+		combined_set = np.copy(self.blocks)
+		for i in range(len(new_blocks)):
+			dist = []
+			for j in range(len(self.blocks)):
+				dist.append(np.linalg.norm(new_blocks[i][0:2] - self.blocks[j][0:2]))
+
+			if len(dist) > 0:
+				if min(dist) >  4:
+					combined_set = np.concatenate((combined_set, [np.append(new_blocks[i][0:2], 0)]), axis=0)
+				elif min(dist) <= 4:
+					combined_set[dist.index(min(dist))][0:2] = new_blocks[i][0:2]
+
+		if len(self.blocks) == 0:
+			print('intialise block set')
+			combined_set = np.concatenate((new_blocks[:,0:2], np.zeros( (len(new_blocks), 1), dtype=int ) ), axis=1)
+
+		self.blocks = combined_set
+
+	def update_block(self, block_state):
+		# block state - coord, colour, pickup
+		coord = block_state[0]
+		colour = block_state[1]
+		pickup = block_state[2]
+
+		print('updating block state')
+		print(coord)
+		print(colour)
+
+		if pickup == True:
+			self.remove_block(coord)
+		else:
+			coords_col = np.array([coord[0], coord[1], colour])
+			combined_set = np.copy(self.blocks)
+			dist = []
+			for j in range(len(self.blocks)):
+				dist.append(np.linalg.norm(coords_col[0:2] - self.blocks[j][0:2]))
+
+			if min(dist) <= 4:
+				combined_set[dist.index(min(dist))] = coords_col
+				self.blocks = combined_set
+
 
 
 
@@ -587,7 +657,7 @@ red_bot = robot_manager(0)
 blue_bot = robot_manager(1)
 n = 0
 
-blocks = []
+#blocks = []
 
 while robot.step(TIME_STEP) != -1:
 
@@ -608,18 +678,24 @@ while robot.step(TIME_STEP) != -1:
 			red_bot.set_state('sweep', start = -np.pi/2 + 0.5, end = np.pi - 0.5, speed = 0.5)
 
 		if n == 200:
-			first_block = np.array([int(blocks[0][0]), int(blocks[0][1])])
-			blue_bot.set_state('go_to_target', target = first_block, obstacle_grid = blue_bot.driving_grid, early_stop = 5, grip = 0, block= True, empty=False, state='idle')
+			first_block = np.array([int(environment.blocks[0][0]), int(environment.blocks[0][1])])
+			second_block = np.array([int(environment.blocks[1][0]), int(environment.blocks[1][1])])
+			blue_bot.set_state('go_to_target', target = first_block, early_stop = 5, grip = 0, block= True, empty=False)
+			red_bot.set_state('go_to_target', target = second_block, early_stop = 5, grip = 0, block= True, empty=False)
 			print(first_block)
 		if n == 350:
 			#blue_bot.set_state('go_to_target', target = (5,5), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 1, block= False, empty=True)
 			blue_bot.set_state('block_extent_routine', target = first_block)
+			red_bot.set_state('block_extent_routine', target = second_block)
 
 		if n == 500:
+			environment.update_block(blue_bot.get_block_state(pickup=False))
+			environment.update_block(red_bot.get_block_state(pickup=False))
 			#blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= True, empty=False, state='idle')
 			pass
-		if n == 520:
-			blue_bot.set_state('block_colour_pickup_routine')
+		#if n == 520:
+			#blue_bot.set_state('block_colour_pickup_routine')
+
 		# 	blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 1, grip = 1, block= True, empty=False, state='idle')
 
 		# 	rr, cc = ellipse(int(blue_bot._block_pos_temp[0]) , int(blue_bot._block_pos_temp[1]), 4,4)
@@ -661,11 +737,14 @@ while robot.step(TIME_STEP) != -1:
 		blue_bot.update_driveable_area(driving_grid, reduced_driving_grid)
 		red_bot.update_driveable_area(driving_grid, reduced_driving_grid)
 
-		occupancy_grid, blocks = environment.find_blocks()
+		occupancy_grid, _ = environment.find_blocks()
 		environment.update_binary_occupancy_grid(robot_data)
+		
+		#print(blocks)
 
-		print(blocks)
+		print(environment.blocks)
 
+		environment()
 		red_bot()
 		blue_bot()
 

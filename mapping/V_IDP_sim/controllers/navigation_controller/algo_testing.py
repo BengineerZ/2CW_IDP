@@ -52,40 +52,64 @@ def pad_grid(occupancy_grid, iterations):
 
 
 
-class robot_manager:
+# class robot_manager:
 
-	def __init__(self, robot_id):
-		self.id = 0
-		self.state = ['idle', {}]
-		self.set_state('idle')
-		print('initialise')
+# 	def __init__(self, robot_id):
+# 		self.id = 0
+# 		self.state = ['idle', {}]
+# 		self.set_state('idle')
+# 		print('initialise')
 
-	def __call__(self):
-		print('called')
-		print(self.state[0])
-		getattr(self, self.state[0])(self.state[1] if len(self.state[1]) > 0 else None)
+# 	def __call__(self):
+# 		print('called')
+# 		print(self.state[0])
+# 		getattr(self, self.state[0])(self.state[1] if len(self.state[1]) > 0 else None)
 		
 
-	def idle(self, args):
-		print('....')
+# 	def idle(self, args):
+# 		print('....')
 
-	def sweep(self, args):
-		print(args['speed'])
-		print(args['angle'])
+# 	def sweep(self, args):
+# 		print(args['speed'])
+# 		print(args['angle'])
 		
-	def set_state(self, state_function, **args):
-		self.state[0] = state_function
-		self.state[1] = args
+# 	def set_state(self, state_function, **args):
+# 		self.state[0] = state_function
+# 		self.state[1] = args
 
 
 	
 
-robot_0 = robot_manager()
-robot_0()
-for i in range(3):
+# robot_0 = robot_manager()
+# robot_0()
+# for i in range(3):
 	
-	robot_0.set_state(0, 'sweep', speed = 2, angle = np.pi/2)
-	robot_0()
+# 	robot_0.set_state(0, 'sweep', speed = 2, angle = np.pi/2)
+# 	robot_0()
+
+blocks0 = np.array([[72, 32],[1, 30],[55, 61],[72, 4]])
+
+blocks_set = np.array([[55, 60, 0],[1, 30, 1]])
+
+def combine_coord_sets(blocks, new_blocks):
+	# allows for order preservation as well as minor deviations in block position
+
+	combined_set = blocks
+	for i in range(len(new_blocks)):
+		dist = []
+		for j in range(len(blocks)):
+			dist.append(np.linalg.norm(new_blocks[i] - blocks[j][0:2]))
+
+		if min(dist) >  4:
+			combined_set = np.concatenate((combined_set, [np.append(new_blocks[i], 0)]), axis=0)
+		elif min(dist) <= 4:
+			combined_set[dist.index(min(dist))][0:2] = new_blocks[i]
+
+	return combined_set
+
+print(combine_coord_sets(blocks_set, blocks0))
+
+
 
 
 
