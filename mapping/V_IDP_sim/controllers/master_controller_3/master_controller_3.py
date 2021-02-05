@@ -323,6 +323,8 @@ class robot_manager:
 
 	def block_extent_routine(self, args):
 
+		self._block_pos_temp = np.array([0,0])
+
 		original_block_angle = np.arctan2((args['target'][1] - self.current_position(grid=False)[1]),(-args['target'][0] + self.current_position(grid=False)[0])) - np.pi/4
 		#print(original_block_angle)
 
@@ -382,6 +384,19 @@ class robot_manager:
 					self._dist_array = []
 					self._block_pos_temp = np.array([int(exact_position[0]), int(exact_position[1])])
 					self.set_state('go_to_target', target = self._block_pos_temp, early_stop = 2, grip = 0, block= True, empty=False)
+
+	def block_update_routine(self, args):
+		colour = self.robot_data[self.robot_id][6]
+		coord = self._block_pos_temp
+
+		#self._block_pos_temp = np.array([0,0])
+
+		if args['grip'] == 1:
+			args['env'].update_block((coord, colour, True))
+		else:
+			args['env'].update_block((coord, colour, False))
+		
+		self.set_state('idle', grip = args['grip'])
 
 	def raw(self, args):
 		set_robot_state(self.robot_id, args['wheels'], args['gripper'])
