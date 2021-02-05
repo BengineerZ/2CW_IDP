@@ -12,6 +12,7 @@ from pathfinder import findpath
 import scipy.interpolate as si
 from scipy.signal import find_peaks
 
+
 TIME_STEP = 64
 
 robot = Robot()
@@ -167,6 +168,7 @@ class robot_manager:
 
 		# state utility vars
 		self._spin = False
+		self._sweep_counter = 0
 
 		self._block_pos_temp = np.array([0,0])
 		self._angle_index = 0
@@ -181,10 +183,14 @@ class robot_manager:
 
 		
 		
+	def set_state(self, state_function, *args ,**kwargs):
+		if state_function:
+			self.state[0] = state_function
 
-	def set_state(self, state_function, **args):
-		self.state[0] = state_function
-		self.state[1] = args
+			if len(args) > 0:
+				self.state[1] = args[0]
+			else:
+				self.state[1] = kwargs
 
 	# convention for state defs: use dict of args even if not needed
 	def idle(self, args):
@@ -219,12 +225,17 @@ class robot_manager:
 			self._spin = not(self._spin)
 		elif np.abs(cross_end) < 0.1 and not(self._spin):
 			self._spin = not(self._spin)
+			self._sweep_counter = self._sweep_counter + 1
 		#print(self.current_angle() + np.pi)
 
 		if self._spin:
 			set_robot_state(self.robot_id, [np.sign(cross_start)*args['speed'], -np.sign(cross_start)*args['speed']], 0)
 		else:
 			set_robot_state(self.robot_id, [np.sign(cross_end)*args['speed'], -np.sign(cross_end)*args['speed']], 0)
+
+		if self._sweep_counter == args['n']:
+			self._sweep_counter = 0
+			self.set_state('idle')
 
 	def go_to_target(self, args):
 		current_pos = self.current_position()
@@ -743,6 +754,8 @@ while robot.step(TIME_STEP) != -1:
 		#print(blocks)
 
 		print(environment.blocks)
+
+		
 
 		environment()
 		red_bot()
