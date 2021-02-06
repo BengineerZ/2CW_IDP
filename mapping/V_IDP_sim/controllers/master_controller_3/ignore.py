@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 from skimage.draw import line, rectangle, rectangle_perimeter, ellipse, polygon
 from skimage.feature import blob_dog
 from skimage.filters import gaussian
-from pathfinder import findpath, h
-from math import hypot
+from pathfinder import findpath
 import scipy.interpolate as si
 from scipy.signal import find_peaks
 
@@ -44,7 +43,7 @@ def initiate_data_transfer():
 	#print('initiate')
 
 def set_robot_state(robot_id, wheel_v, gripper):
-	message = struct.pack('iddi', robot_id, np.clip(wheel_v[0], -10,10), np.clip(wheel_v[1],-10,10),  gripper)
+	message = struct.pack('iddi', robot_id, wheel_v[0], wheel_v[1],  gripper)
 	emitter.send(message)
 
 def await_state_data():
@@ -118,36 +117,36 @@ def robot_motion(state, target, pd, pc, info=False):
 		return leftSpeed, rightSpeed
 
 def bspline(cv, n=100, degree=3, periodic=False):
-	""" Calculate n samples on a bspline
+    """ Calculate n samples on a bspline
 
-		cv :      Array ov control vertices
-		n  :      Number of samples to return
-		degree:   Curve degree
-		periodic: True - Curve is closed
-				  False - Curve is open
-	"""
+        cv :      Array ov control vertices
+        n  :      Number of samples to return
+        degree:   Curve degree
+        periodic: True - Curve is closed
+                  False - Curve is open
+    """
 
-	# If periodic, extend the point array by count+degree+1
-	cv = np.asarray(cv)
-	count = len(cv)
-	if periodic:
-		factor, fraction = divmod(count+degree+1, count)
-		cv = np.concatenate((cv,) * factor + (cv[:fraction],))
-		count = len(cv)
-		degree = np.clip(degree,1,degree)
-	# If opened, prevent degree from exceeding count-1
-	else:
-		degree = np.clip(degree,1,count-1)
-	# Calculate knot vector
-	kv = None
-	if periodic:
-		kv = np.arange(0-degree,count+degree+degree-1)
-	else:
-		kv = np.clip(np.arange(count+degree+1)-degree,0,count-degree)
-	# Calculate query range
-	u = np.linspace(periodic,(count-degree),n)
-	# Calculate result
-	return np.array(si.splev(u, (kv,cv.T,degree))).T
+    # If periodic, extend the point array by count+degree+1
+    cv = np.asarray(cv)
+    count = len(cv)
+    if periodic:
+        factor, fraction = divmod(count+degree+1, count)
+        cv = np.concatenate((cv,) * factor + (cv[:fraction],))
+        count = len(cv)
+        degree = np.clip(degree,1,degree)
+    # If opened, prevent degree from exceeding count-1
+    else:
+        degree = np.clip(degree,1,count-1)
+    # Calculate knot vector
+    kv = None
+    if periodic:
+        kv = np.arange(0-degree,count+degree+degree-1)
+    else:
+        kv = np.clip(np.arange(count+degree+1)-degree,0,count-degree)
+    # Calculate query range
+    u = np.linspace(periodic,(count-degree),n)
+    # Calculate result
+    return np.array(si.splev(u, (kv,cv.T,degree))).T
 ####
 
 
@@ -164,7 +163,7 @@ class robot_manager:
 		self.driving_grid = np.full((80,80), 0)
 		self.reduced_driving_grid = np.full((80,80), 0)
 		self.current_path = []
-		self._block_found_temp = False
+
 
 
 		# state utility vars
@@ -223,14 +222,15 @@ class robot_manager:
 
 		dot_start = current_orientation.dot(start_heading)
 		dot_end = current_orientation.dot(end_heading)
-
 		#print(cross_end)
 		if np.abs(cross_start) < 0.1 and dot_start > 0 and self._spin:
 			self._spin = not(self._spin)
+			self._sweep_counter = self._sweep_counter + 1
 		elif np.abs(cross_end) < 0.1 and dot_end > 0 and not(self._spin):
 			self._spin = not(self._spin)
 			self._sweep_counter = self._sweep_counter + 1
-		#print(self.current_angle() + np.pi)
+
+		print(self._sweep_counter)
 
 		if self._spin:
 			set_robot_state(self.robot_id, [np.sign(cross_start)*args['speed'], -np.sign(cross_start)*args['speed']], 0)
@@ -238,21 +238,16 @@ class robot_manager:
 			set_robot_state(self.robot_id, [np.sign(cross_end)*args['speed'], -np.sign(cross_end)*args['speed']], 0)
 
 		if self._sweep_counter == args['n']:
-			self._spin = not(self._spin)
+			self._spin = False
 			self._sweep_counter = 0
 			self.set_state('idle')
 
 	def go_to_target(self, args):
 
-		if "speed" in args:
+		if 'speed' in args:
 			speed = args['speed']
 		else:
 			speed = 1.5
-
-		if 'look_at' in args:
-			look_at = args['look_at']
-		else:
-			look_at = True
 
 		current_pos = self.current_position()
 		current_pos = (int(current_pos[0]), int(current_pos[1]))
@@ -289,13 +284,9 @@ class robot_manager:
 				if np.sign(speed)*len(path) > np.sign(speed)*args['early_stop']:
 						set_robot_state(self.robot_id, robot_motion(robot_data[self.robot_id][1:4], path[1], speed, 1), args['grip'])
 				else:
-					if look_at:
-						motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
-						set_robot_state(self.robot_id, [np.sign(motion[2])*0.4, -np.sign(motion[2])*0.4], args['grip'])
-						if np.abs(motion[2]) < 0.1:
-							self.set_state('idle', grip = args['grip'])
-							self.current_path = []
-					else:
+					motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
+					set_robot_state(self.robot_id, [np.sign(motion[2])*0.4, -np.sign(motion[2])*0.4], args['grip'])
+					if np.abs(motion[2]) < 0.1:
 						self.set_state('idle', grip = args['grip'])
 						self.current_path = []
 			else:
@@ -322,13 +313,9 @@ class robot_manager:
 						if np.sign(speed)*len(path) > np.sign(speed)*args['early_stop']:
 								set_robot_state(self.robot_id, robot_motion(robot_data[self.robot_id][1:4], path[1], speed, 1), args['grip'])
 						else:
-							if look_at:
-								motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
-								set_robot_state(self.robot_id, [np.sign(motion[2])*0.4, -np.sign(motion[2])*0.4], args['grip'])
-								if np.abs(motion[2]) < 0.1:
-									self.set_state('idle', grip = args['grip'])
-									self.current_path = []
-							else:
+							motion = robot_motion(self.robot_data[self.robot_id][1:4], args['target'], 0, 1, info=True)
+							set_robot_state(self.robot_id, [np.sign(motion[2])*0.4, -np.sign(motion[2])*0.4], args['grip'])
+							if np.abs(motion[2]) < 0.1:
 								self.set_state('idle', grip = args['grip'])
 								self.current_path = []
 					else:
@@ -345,11 +332,9 @@ class robot_manager:
 				#self.current_path = []
 
 
-
 	def block_extent_routine(self, args):
 
 		self._block_pos_temp = np.array([0,0])
-		self._block_found_temp = False
 
 		original_block_angle = np.arctan2((args['target'][1] - self.current_position(grid=False)[1]),(-args['target'][0] + self.current_position(grid=False)[0])) - np.pi/4
 		#print(original_block_angle)
@@ -385,7 +370,7 @@ class robot_manager:
 			# print(np.flatnonzero(rising_mask) +1)
 			# print(np.flatnonzero(falling_mask) +1)
 			#print(np.array(self._dist_array)*-1)
-			peaks, properties = find_peaks(np.array(self._dist_array)*-1, height=(-0.35, 0), width=3)
+			peaks, _ = find_peaks(np.array(self._dist_array)*-1, height=(-0.35, 0), width=3)
 			#print(self._dist_array[peaks[0]])
 
 			if len(peaks) == 0:
@@ -393,24 +378,13 @@ class robot_manager:
 				self._angle_index = 0
 				self._dist_array = []
 				self.set_state('idle')
-				self._block_found_temp = False
-				args['env'].update_block((args['target'], 0, True))
-
-
 			else:
-				self._block_found_temp = True
-
-				sweep1 = sweep_angles[int(properties["left_ips"][0])]
-				sweep2 = sweep_angles[int(properties["right_ips"][0])]
-
-				exact_angle = (sweep1 + sweep2)/2
-
-				if exact_angle + np.pi/4 > np.pi:
-					exact_angle = exact_angle + np.pi/4 - np.pi*2
+				if sweep_angles[peaks[0]] + np.pi/4 > np.pi:
+					exact_angle = sweep_angles[peaks[0]] + np.pi/4 - np.pi*2
 				elif sweep_angles[peaks[0]] + np.pi/4 < -np.pi:
-					exact_angle = exact_angle + np.pi/4 + np.pi*2
+					exact_angle = sweep_angles[peaks[0]] + np.pi/4 + np.pi*2
 				else:
-					exact_angle = exact_angle + np.pi/4
+					exact_angle = sweep_angles[peaks[0]] + np.pi/4
 
 				
 				cross = self.set_heading(exact_angle, 5, info=True)
@@ -420,8 +394,7 @@ class robot_manager:
 					self._angle_index = 0
 					self._dist_array = []
 					self._block_pos_temp = np.array([int(exact_position[0]), int(exact_position[1])])
-					self.set_state('go_to_target', target = self._block_pos_temp, early_stop = 2, grip = 0, block= True, empty=False, look_at = True, speed = 0.6)
-
+					self.set_state('go_to_target', target = self._block_pos_temp, early_stop = 2, grip = 0, block= True, empty=False)
 
 	def block_update_routine(self, args):
 		colour = self.robot_data[self.robot_id][6]
@@ -480,7 +453,7 @@ class robot_manager:
 		self._block_pos_temp = np.array([0,0])
 
 		return coord, colour, pickup
-	
+
 	def get_colour(self):
 		return self.robot_data[self.robot_id][6]
 
@@ -519,7 +492,6 @@ def pad_grid(occupancy_grid, iterations):
 	occupancy_grid[occupancy_grid <= 0.04] = 0
 	
 	return occupancy_grid
-
 
 class environment_manager:
 
@@ -626,15 +598,14 @@ class environment_manager:
 		for j in range(len(self.blocks)):
 			dist.append(np.linalg.norm(target - self.blocks[j][0:2]))
 
-		if len(dist) > 0:
-			if min(dist) <= 4:
-				#combined_set[dist.index(min(dist))] = coords_col
-				combined_set = np.delete(combined_set, dist.index(min(dist)), axis = 0)
-				self.blocks = combined_set
+		if min(dist) <= 4:
+			#combined_set[dist.index(min(dist))] = coords_col
+			combined_set = np.delete(combined_set, dist.index(min(dist)), axis = 0)
+			self.blocks = combined_set
 
-				rr, cc = ellipse(target[0] , target[1], 4,4)
-				for i in range(len(rr)):
-					environment.occupancy_grid[bound(rr[i]), bound(cc[i])] = 0.2
+			rr, cc = ellipse(target[0] , target[1], 4,4)
+			for i in range(len(rr)):
+				environment.occupancy_grid[bound(rr[i]), bound(cc[i])] = 0.2
 
 
 	def combine_coord_sets(self):
@@ -677,192 +648,15 @@ class environment_manager:
 			for j in range(len(self.blocks)):
 				dist.append(np.linalg.norm(coords_col[0:2] - self.blocks[j][0:2]))
 
-			if len(dist) >0:
-				if min(dist) <= 4:
-					combined_set[dist.index(min(dist))] = coords_col
-					self.blocks = combined_set
-
-# =================================================================================
-#block picker 
-def choose_block(block_list, robot, factor):
-	cur_pos = robot.current_position()
-	new_block_list = []
-	for block in block_list:
-		p = (block[0],block[1])
-		dis = h(p, cur_pos)
-		if robot.robot_id + block[2] ==2:
-			new_block_list.append([block[0],block[1],dis*factor])
-		elif block[2] ==0:
-			new_block_list.append([block[0], block[1], dis])
-	if new_block_list == []:
-		if robot.robot_id == 0:
-			return (7,73)
-		else:
-			return (7,7)
-	optblock = min(new_block_list, key=lambda x: x[2])
-	return (optblock[0],optblock[1])
-
-def robot_at_start(robot):
-	row,col = robot.current_position()
-	if robot.robot_id == 0 and row <13 and col > 67:
-		return True
-	elif robot.robot_id == 1 and row <13 and col <13:
-		return True
-	else:
-		return False 
-
-class robot_state_manager:
-	def __init__(self):
-		# All available tasks
-		#self.available_tasks = ["start", "sweep", "go_to_block", "approach_block", "test_colour_and_grab", "return"]
-		
-		# Each task tree node has a name, name of next node, name of alt. next node and a condition
-		# Condition is a lambda function with arguments env and robot
-		# If it evaluates to True, go to next node, if False, go to alt. next node
-		self.task_tree = {}
-		
-		self.task_tree["start"] = {
-			"next": "sweep",
-			"next_alt": "go_to_block",
-			"condition": lambda env, robot: len(env.blocks) == 0
-		}
-		
-		self.task_tree["sweep"] = {
-			"next": "go_to_block",
-			"next_alt": "sweep",
-			"condition": lambda env, robot: len(env.blocks) > 1
-		}
-		
-		self.task_tree["go_to_block"] = {
-			"next": "start_to_block",
-			"next_alt": "block_to_block",
-			"condition": lambda env, robot: robot_at_start(robot)
-		}
-
-		self.task_tree["start_to_block"]= {
-			"next": "approach_block",
-			"next_alt": "",
-			"condition": lambda env, robot: True
-		}
-
-		self.task_tree["block_to_block"]= {
-			"next": "approach_block",
-			"next_alt": "",
-			"condition": lambda env, robot: True
-		}
-		
-		self.task_tree["approach_block"] = {
-			"next": "test_color",
-			"next_alt": "block_to_block",
-			"condition": lambda env, robot: robot._block_found_temp 
-		}
-		
-		self.task_tree["test_color"] = {
-			"next": "grab_block",
-			"next_alt": "reverse",
-			"condition": lambda env, robot: robot.get_colour() + robot.robot_id == 2
-		}
-		self.task_tree["reverse"] = {
-			"next": "go_to_block",
-			"next_alt": "",
-			"condition": lambda env, robot: True
-		}
-		
-		self.task_tree["grab_block"] = {
-			"next": "grab_block2",
-			"next_alt": "go_to_block",
-			"condition": lambda env, robot: robot.get_colour() != 0
-		}
-		self.task_tree["grab_block2"] = {
-			"next": "return",
-			"next_alt": "",
-			"condition": lambda env, robot: True
-		}
-		
-		self.task_tree["return"] = {
-			"next": "start",
-			"next_alt": "",
-			"condition": lambda env, robot: True
-		}
-
-		
-		self.current_task = "start"
-	
-	def make_robot_state_from_task(self, env, robot):
-		if self.current_task == "start":
-			return ["idle", {}]
-		elif self.current_task == "sweep":
-			if robot.robot_id == 0 :
-				return ["sweep", {"start": -np.pi/2 +0.5, "end": np.pi - 0.5, "speed": 0.5, "n": 2}]
-			else:
-				return ["sweep", {"start": np.pi/2 - 0.5, "end": np.pi + 0.5, "speed": 0.5, "n": 2}]
-		elif self.current_task == "go_to_block":
-			return ["idle", {}]
-		elif self.current_task == "start_to_block":
-			block = choose_block(env.blocks, robot, 0.5)
-			print("robot: ", robot.robot_id,"block: ", block)
-			return ["go_to_target", {"target": np.array([int(block[0]), int(block[1])]), "early_stop": 5, "grip": 0, "block": True, "empty": False}]
-		elif self.current_task == "block_to_block":
-			block = choose_block(env.blocks, robot, 0.5)
-			print("robot: ", robot.robot_id,"block: ", block)
-			return ["go_to_target", {"target": np.array([int(block[0]), int(block[1])]), "early_stop": 5, "grip": 0, "block": True, "empty": True}]
-			
-			'''if robot.robot_id == 0 :
-				return ["go_to_target", {"target": np.array([int(env.blocks[0][0]), int(env.blocks[0][1])]), "early_stop": 5, "grip": 0, "block": True, "empty": False}]
-			else:
-				if len(env.blocks) > 1 :
-					return ["go_to_target", {"target": np.array([int(env.blocks[1][0]), int(env.blocks[1][1])]), "early_stop": 5, "grip": 0, "block": True, "empty": False}]	
-				else:
-					return ["idle", {}]'''
-		elif self.current_task == "approach_block":
-			block = choose_block(env.blocks, robot, 0.5)
-			return ["block_extent_routine", {"target": np.array([int(block[0]), int(block[1])]), 'env' : env}]
-		elif self.current_task == "test_color":
-			return ["block_update_routine", {"grip":0, "env": env}]
-		elif self.current_task == "reverse":
-			return ["go_to_target", {"target": robot._block_pos_temp, "early_stop": 5, "grip": 0, "speed": -0.5, "block": True, "empty": False}]
-		elif self.current_task =="grab_block":
-			'''curr_col = robot.get_colour()
-			if curr_col + robot.robot_id ==2:
-				print("hi")
-				return ["block_update_routine", {"grip":1, "env": env}]
-			else:
-				return ["idle", {}]'''
-			return ["block_update_routine", {"grip":1, "env": env}]
-		elif self.current_task =="grab_block2":
-			return ["go_to_target", {"target": robot._block_pos_temp, "early_stop": 1, "grip": 1, "block": True, "empty": False}]
-		elif self.current_task == "return":
-			if robot.robot_id == 0:
-				return ["go_to_target", {"target": (7, 73), "early_stop": 2, "grip": 1, "block": False, "empty": True, "look_at": False}]
-			else:
-				return ["go_to_target", {"target": (7, 7), "early_stop": 2, "grip": 1, "block": False, "empty": True, "look_at": False}]
+			if min(dist) <= 4:
+				combined_set[dist.index(min(dist))] = coords_col
+				self.blocks = combined_set
 
 
 
-#red_bot.set_state('go_to_target', target = second_block, early_stop = 5, grip = 0, block= True, empty=False)
-	
-	def update_current_task(self, env, robot):
-		condition_value = self.task_tree[self.current_task]["condition"](env, robot) # Evaluate condition function
-		#print("aaaa", len(env.blocks))
-		if condition_value == True:
-			self.current_task = self.task_tree[self.current_task]["next"]
-		else:
-			self.current_task = self.task_tree[self.current_task]["next_alt"]
-	
-	def update_state(self, env, robot):
-		# If busy, do not interrupt
-		# TODO: restart if robot times out (takes too long to do task)
-		if robot.state[0] != "idle" and robot.state[0] != 'blocked':
-			return
-		
-		self.update_current_task(env, robot)
-		state = self.make_robot_state_from_task(env, robot)
-		print("State manager says: ", self.current_task, "state: ", state)
-		robot.set_state(state[0], state[1])
-		#print("Current task: ", self.current_task)
-		#print("Condition eval: ", self.task_tree[self.current_task]["condition"](env, robot))
-		#robot.set_state('sweep', start = np.pi/2 - 0.5, end = -np.pi +0.5, speed = 0.5)
-# =================================================================================
+
+
+
 
 
 environment = environment_manager()
@@ -903,9 +697,6 @@ red_bot = robot_manager(0)
 blue_bot = robot_manager(1)
 n = 0
 
-red_bot_state_manager = robot_state_manager()
-blue_bot_state_manager = robot_state_manager()
-
 #blocks = []
 
 while robot.step(TIME_STEP) != -1:
@@ -919,29 +710,31 @@ while robot.step(TIME_STEP) != -1:
 
 
 
-		'''
+		
 		if n == 10:
 			### main loop 
 			#blue_bot.set_state('go_to_target', target = (40,40), obstacle_grid = test, early_stop = 5, grip = 0)
-			blue_bot.set_state('sweep', start = np.pi/2 - 0.5, end = -np.pi +0.5, speed = 0.5, n=1)
-			red_bot.set_state('sweep', start = -np.pi/2 + 0.5, end = np.pi - 0.5, speed = 0.5, n=1)
+			blue_bot.set_state('sweep', start = np.pi/2, end = -np.pi, speed = 0.5, n= 5)
+			#red_bot.set_state('sweep', start = -np.pi/2 + 0.5, end = np.pi - 0.5, speed = 0.5, n=2)
+			
 
 		if n == 200:
-			first_block = np.array([int(environment.blocks[0][0]), int(environment.blocks[0][1])])
-			second_block = np.array([int(environment.blocks[1][0]), int(environment.blocks[1][1])])
-			blue_bot.set_state('go_to_target', target = first_block, early_stop = 5, grip = 0, block= True, empty=False)
-			red_bot.set_state('go_to_target', target = second_block, early_stop = 5, grip = 0, block= True, empty=False)
-			print(first_block)
-		if n == 350:
-			#blue_bot.set_state('go_to_target', target = (5,5), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 1, block= False, empty=True)
-			blue_bot.set_state('block_extent_routine', target = first_block)
-			red_bot.set_state('block_extent_routine', target = second_block)
+			blue_bot.set_state('go_to_target', target = (40,20), early_stop = 5, grip = 0, block= True, empty=False)
+		# 	first_block = np.array([int(environment.blocks[0][0]), int(environment.blocks[0][1])])
+		# 	second_block = np.array([int(environment.blocks[1][0]), int(environment.blocks[1][1])])
+		# 	blue_bot.set_state('go_to_target', target = first_block, early_stop = 5, grip = 0, block= True, empty=False)
+		# 	red_bot.set_state('go_to_target', target = second_block, early_stop = 5, grip = 0, block= True, empty=False)
+		# 	print(first_block)
+		# if n == 350:
+		# 	#blue_bot.set_state('go_to_target', target = (5,5), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 1, block= False, empty=True)
+		# 	blue_bot.set_state('block_extent_routine', target = first_block)
+		# 	red_bot.set_state('block_extent_routine', target = second_block)
 
-		if n == 500:
-			environment.update_block(blue_bot.get_block_state(pickup=False))
-			environment.update_block(red_bot.get_block_state(pickup=False))
-			#blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= True, empty=False, state='idle')
-			pass
+		# if n == 500:
+		# 	environment.update_block(blue_bot.get_block_state(pickup=False))
+		# 	environment.update_block(red_bot.get_block_state(pickup=False))
+		# 	#blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= True, empty=False, state='idle')
+		# 	pass
 		#if n == 520:
 			#blue_bot.set_state('block_colour_pickup_routine')
 
@@ -956,7 +749,7 @@ while robot.step(TIME_STEP) != -1:
 
 
 		# if n > 700:
-		# 	blue_bot.set_state('go_to_target', target = (8,8), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= False, empty=True)'''
+		# 	blue_bot.set_state('go_to_target', target = (8,8), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= False, empty=True)
 			
 
 
@@ -976,7 +769,7 @@ while robot.step(TIME_STEP) != -1:
 
 
 
-		#print(f"blue_bot_State: {blue_bot.state[0]}, angle: {blue_bot.current_angle()}")
+		#print(blue_bot.state[0])
 		
 		test = np.copy(blue_bot.driving_grid)
 		for i in range(len(blue_bot.current_path)):
@@ -990,19 +783,14 @@ while robot.step(TIME_STEP) != -1:
 		environment.update_binary_occupancy_grid(robot_data)
 		
 		#print(blocks)
-		'''print("====")
-		print("Blue bot current task: ", blue_bot_state_manager.current_task)
-		print("Blue bot state: ", blue_bot.state)
-		print("Red bot current task: ", red_bot_state_manager.current_task)
-		print("Red bot state: ", red_bot.state)
-		print("Blocks found: \n", environment.blocks)'''
+
+		#print(environment.blocks)
+
+		
 
 		environment()
 		red_bot()
 		blue_bot()
-	
-		red_bot_state_manager.update_state(environment, red_bot)
-		blue_bot_state_manager.update_state(environment, blue_bot)
 
 
 	img.set_data(environment.occupancy_grid)

@@ -87,9 +87,9 @@ def pad_grid(occupancy_grid, iterations):
 # 	robot_0.set_state(0, 'sweep', speed = 2, angle = np.pi/2)
 # 	robot_0()
 
-blocks0 = np.array([[72, 32],[1, 30],[55, 61],[72, 4]])
+#blocks0 = np.array([[72, 32],[1, 30],[55, 61],[72, 4]])
 
-blocks_set = np.array([[55, 60, 0],[1, 30, 1]])
+#blocks_set = np.array([[55, 60, 0],[1, 30, 1]])
 
 def combine_coord_sets(blocks, new_blocks):
 	# allows for order preservation as well as minor deviations in block position
@@ -107,7 +107,7 @@ def combine_coord_sets(blocks, new_blocks):
 
 	return combined_set
 
-print(combine_coord_sets(blocks_set, blocks0))
+
 
 
 
@@ -141,3 +141,71 @@ print(combine_coord_sets(blocks_set, blocks0))
 
 # plt.imshow(occupancy_grid)
 # plt.show()
+
+from collections import deque
+
+
+
+class overall_state_manager:
+
+	def __init__(self):
+		self.task_list = deque([['go to target', {'target': (20,20)}], ['idle', {'grip': 0}]])
+		
+	def __call__(self):
+		# for task in self.task_list:
+		# 	print(task[0])
+		# 	print(task[1])
+		pass
+
+	def get_next_task(self, current_state):
+		if current_state == 'idle':
+			return self.task_list.popleft()
+		else:
+			return None
+
+	def add_to_queue(self, task, args, position=0):
+		self.task_list.insert([task, args])
+
+manager = overall_state_manager()
+
+class robot:
+	def __init__(self):
+		self.state = 'idle'
+
+	def __call__(self):
+		print(self.state)
+
+		if self.state == 'go to target':
+			self.set_state('idle')
+
+	def set_state(self, state):
+		if state:
+			print('state set to : ' + state)
+			self.state = state
+		else:
+			print('cannot set state, robot occupied')
+
+bot = robot()
+
+for i in range(10):
+	print(i)
+
+	
+
+	
+	if i == 5:
+
+		bot.set_state(manager.get_next_task(bot.state)[0])
+
+	# if i == 7:
+	# 	bot.set_state(manager.get_next_task()[0])
+
+
+	bot()
+	manager()
+	print('\n')
+
+
+
+		
+		
