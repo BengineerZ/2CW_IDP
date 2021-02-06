@@ -220,13 +220,17 @@ class robot_manager:
 		cross_start = -np.cross(current_orientation, start_heading)[1]
 		cross_end = -np.cross(current_orientation, end_heading)[1]
 
+		dot_start = current_orientation.dot(start_heading)
+		dot_end = current_orientation.dot(end_heading)
 		#print(cross_end)
-		if np.abs(cross_start) < 0.1 and self._spin:
-			self._spin = not(self._spin)
-		elif np.abs(cross_end) < 0.1 and not(self._spin):
+		if np.abs(cross_start) < 0.1 and dot_start > 0 and self._spin:
 			self._spin = not(self._spin)
 			self._sweep_counter = self._sweep_counter + 1
-		#print(self.current_angle() + np.pi)
+		elif np.abs(cross_end) < 0.1 and dot_end > 0 and not(self._spin):
+			self._spin = not(self._spin)
+			self._sweep_counter = self._sweep_counter + 1
+
+		print(self._sweep_counter)
 
 		if self._spin:
 			set_robot_state(self.robot_id, [np.sign(cross_start)*args['speed'], -np.sign(cross_start)*args['speed']], 0)
@@ -234,6 +238,7 @@ class robot_manager:
 			set_robot_state(self.robot_id, [np.sign(cross_end)*args['speed'], -np.sign(cross_end)*args['speed']], 0)
 
 		if self._sweep_counter == args['n']:
+			self._spin = False
 			self._sweep_counter = 0
 			self.set_state('idle')
 
@@ -442,6 +447,9 @@ class robot_manager:
 		self._block_pos_temp = np.array([0,0])
 
 		return coord, colour, pickup
+
+	def get_colour(self):
+		return self.robot_data[self.robot_id][6]
 
 ### environment defs
 
@@ -700,25 +708,25 @@ while robot.step(TIME_STEP) != -1:
 		if n == 10:
 			### main loop 
 			#blue_bot.set_state('go_to_target', target = (40,40), obstacle_grid = test, early_stop = 5, grip = 0)
-			blue_bot.set_state('sweep', start = np.pi/2 - 0.5, end = -np.pi +0.5, speed = 0.5)
-			red_bot.set_state('sweep', start = -np.pi/2 + 0.5, end = np.pi - 0.5, speed = 0.5)
+			blue_bot.set_state('sweep', start = np.pi/2, end = -np.pi/2, speed = 0.5, n= 2)
+			#red_bot.set_state('sweep', start = -np.pi/2 + 0.5, end = np.pi - 0.5, speed = 0.5, n=2)
 
-		if n == 200:
-			first_block = np.array([int(environment.blocks[0][0]), int(environment.blocks[0][1])])
-			second_block = np.array([int(environment.blocks[1][0]), int(environment.blocks[1][1])])
-			blue_bot.set_state('go_to_target', target = first_block, early_stop = 5, grip = 0, block= True, empty=False)
-			red_bot.set_state('go_to_target', target = second_block, early_stop = 5, grip = 0, block= True, empty=False)
-			print(first_block)
-		if n == 350:
-			#blue_bot.set_state('go_to_target', target = (5,5), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 1, block= False, empty=True)
-			blue_bot.set_state('block_extent_routine', target = first_block)
-			red_bot.set_state('block_extent_routine', target = second_block)
+		# if n == 200:
+		# 	first_block = np.array([int(environment.blocks[0][0]), int(environment.blocks[0][1])])
+		# 	second_block = np.array([int(environment.blocks[1][0]), int(environment.blocks[1][1])])
+		# 	blue_bot.set_state('go_to_target', target = first_block, early_stop = 5, grip = 0, block= True, empty=False)
+		# 	red_bot.set_state('go_to_target', target = second_block, early_stop = 5, grip = 0, block= True, empty=False)
+		# 	print(first_block)
+		# if n == 350:
+		# 	#blue_bot.set_state('go_to_target', target = (5,5), obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 1, block= False, empty=True)
+		# 	blue_bot.set_state('block_extent_routine', target = first_block)
+		# 	red_bot.set_state('block_extent_routine', target = second_block)
 
-		if n == 500:
-			environment.update_block(blue_bot.get_block_state(pickup=False))
-			environment.update_block(red_bot.get_block_state(pickup=False))
-			#blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= True, empty=False, state='idle')
-			pass
+		# if n == 500:
+		# 	environment.update_block(blue_bot.get_block_state(pickup=False))
+		# 	environment.update_block(red_bot.get_block_state(pickup=False))
+		# 	#blue_bot.set_state('go_to_target', target = blue_bot._block_pos_temp, obstacle_grid = blue_bot.driving_grid, early_stop = 2, grip = 0, block= True, empty=False, state='idle')
+		# 	pass
 		#if n == 520:
 			#blue_bot.set_state('block_colour_pickup_routine')
 
@@ -753,7 +761,7 @@ while robot.step(TIME_STEP) != -1:
 
 
 
-		print(blue_bot.state[0])
+		#print(blue_bot.state[0])
 		
 		test = np.copy(blue_bot.driving_grid)
 		for i in range(len(blue_bot.current_path)):
@@ -768,7 +776,7 @@ while robot.step(TIME_STEP) != -1:
 		
 		#print(blocks)
 
-		print(environment.blocks)
+		#print(environment.blocks)
 
 		
 
