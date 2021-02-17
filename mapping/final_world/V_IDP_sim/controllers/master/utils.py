@@ -25,15 +25,20 @@ def convert_to_grid_space(coord):
 
 ### Visualiser Class:
 class visualiser:
-	def __init__(self, num_of_displays):
+	def __init__(self, num_of_displays, titles, k):
 		self.num_of_displays = num_of_displays
-		self.fig = plt.figure()
+		self.k = k
+		exec('self.fig{} = plt.figure()'.format(k))
+		
+		#self.fig.suptitle('test title', fontsize=20)
+		self.titles = titles
 		placeholder = np.full((80,80), 0)
 		for i in range(num_of_displays):
-			exec('self.ax{} = self.fig.add_subplot(1, {}, {})'.format(i, self.num_of_displays, i+1))
-			exec('self.display{} = self.ax{}.imshow(np.full((80,80), 0), vmin=-1, vmax=1, interpolation="None", cmap="RdBu")'.format(i, i))
-			self.fig.canvas.draw()
-			exec('self.axbackground{} = self.fig.canvas.copy_from_bbox(self.ax{}.bbox)'.format(i, i))
+			exec('self.ax{}{} = self.fig{}.add_subplot(1, {}, {})'.format(k,i,k, self.num_of_displays, i+1))
+			exec('self.display{}{} = self.ax{}{}.imshow(np.full((80,80), 0), vmin=-1, vmax=1, interpolation="None", cmap="RdBu")'.format(k, i, k,i))
+			exec('self.ax{}{}.set_title(\"{}\")'.format(k, i, self.titles[i]))
+			exec('self.fig{}.canvas.draw()'.format(k))
+			exec('self.axbackground{}{} = self.fig{}.canvas.copy_from_bbox(self.ax{}{}.bbox)'.format(k, i, k, k,i))
 		plt.show(block = False)
 
 	def __call__(self, *args):
@@ -41,8 +46,9 @@ class visualiser:
 			raise ValueError('displays and display number must match')
 		else:
 			for i in range(self.num_of_displays):
-				exec('self.display{}.set_data(args[{}])'.format(i, i))
-				exec('self.fig.canvas.restore_region(self.axbackground{})'.format(i))
-				exec('self.ax{}.draw_artist(self.display{})'.format(i,i))
-				exec('self.fig.canvas.blit(self.ax{}.bbox)'.format(i))
-				self.fig.canvas.flush_events()
+				exec('self.display{}{}.set_data(args[{}])'.format(self.k, i, i))
+				exec('self.fig{}.canvas.restore_region(self.axbackground{}{})'.format(self.k,self.k,i))
+				exec('self.ax{}{}.draw_artist(self.display{}{})'.format(self.k,i,self.k,i))
+				exec('self.fig{}.canvas.blit(self.ax{}{}.bbox)'.format(self.k,self.k,i))
+				exec('self.fig{}.canvas.flush_events()'.format(self.k))
+				

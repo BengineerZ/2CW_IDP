@@ -32,7 +32,8 @@ blue_bot = robot_manager(1, emitter)
 
 environment = environment_manager()
 
-visualiser = visualiser(3)
+visualiser1 = visualiser(2, ["Occupancy Grid","Block Grid"], k=1)
+visualiser2 = visualiser(2, ["Blue bot","Red bot"], k=2)
 
 red_bot_state_manager = robot_state_manager(master_robot)
 blue_bot_state_manager = robot_state_manager(master_robot)
@@ -81,7 +82,7 @@ while master_robot.step(TIME_STEP) != -1:
 		blue_bot.update_driveable_area(driving_grid, reduced_driving_grid)
 		red_bot.update_driveable_area(driving_grid, reduced_driving_grid)
 
-		_, _ = environment.find_blocks()
+		obver, _ = environment.find_blocks()
 		environment.update_binary_occupancy_grid(robot_data)
 
 		environment()
@@ -105,7 +106,8 @@ while master_robot.step(TIME_STEP) != -1:
 		for i in range(len(blue_bot.current_path)):
 			blue_visualiser[int(blue_bot.current_path[i][0]), int(blue_bot.current_path[i][1])] = 0.5
 
-		visualiser(environment.occupancy_grid, blue_visualiser, red_visualiser)
+		visualiser1(environment.occupancy_grid, obver)
+		visualiser2(blue_visualiser, red_visualiser)
 
 		n = n + 1
 

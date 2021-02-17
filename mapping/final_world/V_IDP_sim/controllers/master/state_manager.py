@@ -226,10 +226,10 @@ class robot_state_manager:
 		elif self.current_task == "return":
 			if robot.robot_id == 0:
 				self.red_current_target = (7,73)
-				return ["go_to_target", {"target": (7, 73), "early_stop": 5, "grip": 1, "block": True, "empty": True, "look_at": False, 'optimise_heading': False}]
+				return ["go_to_target", {"target": (7, 73), "early_stop": 5, "grip": 1, "block": True, "empty": True, "look_at": False, 'optimise_heading': False, 'speed': 1}]
 			else:
 				self.blue_current_target = (7,7)
-				return ["go_to_target", {"target": (7, 7), "early_stop": 5, "grip": 1, "block": True, "empty": True, "look_at": False, 'optimise_heading': False}]
+				return ["go_to_target", {"target": (7, 7), "early_stop": 5, "grip": 1, "block": True, "empty": True, "look_at": False, 'optimise_heading': False, 'speed': 1}]
 
 		elif self.current_task == "return_spin":
 			if robot.robot_id == 0:
@@ -277,7 +277,7 @@ class robot_state_manager:
 			if robot.robot_id == 0:
 				self.red_current_target = (20,60)
 				#red_current_target = environment.explore_uncertainty()
-				return ["go_to_target", {"target": (int(self.red_current_target[0]), int(self.red_current_target[1])), "early_stop": 1, "grip": 0, "block": False, "empty": False}]
+				return ["go_to_target", {"target": (int(self.red_current_target[0]), int(self.red_current_target[1])), "early_stop": 20, "grip": 0, "block": False, "empty": False}]
 			else:
 				point = self.explore_coord(env.explore_uncertainty(),robot.driving_grid)
 				self.blue_current_target = [int(point[0]), int(point[1])]
@@ -378,9 +378,9 @@ class robot_state_manager:
 		block_list = env.blocks
 
 		if len(block_list) == 1:
-			if robot.robot_id ==0 and env.red_dropped_off < env.blue_dropped_off:
+			if robot.robot_id ==0 and env.red_dropped_off < env.blue_dropped_off and env.blue_dropped_off > 2:
 				return (block_list[0][0], block_list[0][1])
-			elif robot.robot_id == 1 and env.red_dropped_off > env.blue_dropped_off:
+			elif robot.robot_id == 1 and env.red_dropped_off > env.blue_dropped_off and env.red_dropped_off > 2:
 				return (block_list[0][0], block_list[0][1])
 			elif env.red_dropped_off == env.blue_dropped_off:
 				pass
@@ -409,7 +409,9 @@ class robot_state_manager:
 
 				if danger >= 6:
 					if not(robot.path_possible([int(danger_coord[0]),int(danger_coord[1])])):
+						print('No danger path')
 						continue
+
 
 				combined_heuristic = distance*2 + -other_robot_distance*1 + danger*1 - h(other_target, p)
 				print(combined_heuristic)

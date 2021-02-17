@@ -199,6 +199,12 @@ class environment_manager:
 		print(coord)
 		print(colour)
 
+		if (coord[0] <= 1 or coord[0] >= 78 or coord[1] <= 1 or coord[1] >= 78) and colour == 0:
+			self.remove_block(coord)
+			return
+		else:
+			pass
+
 		if pickup == True:
 			self.remove_block(coord)
 		else:

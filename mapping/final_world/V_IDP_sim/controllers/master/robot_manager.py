@@ -598,9 +598,9 @@ class robot_manager:
 
 			if len(path) > 5:
 				m = si.interp1d([0, 1],[8*speed_factor, 0])
-				self.set_robot_state(robot_motion(self.robot_data[self.robot_id][1:4], path[1], 3*speed_factor*args['away'], rev*3*speed_factor, normalise=True), args['grip'])
+				self.set_robot_state(robot_motion(self.robot_data[self.robot_id][1:4], path[1], 4*speed_factor*args['away'], rev*3*speed_factor, normalise=True), args['grip'])
 			else:
-				self.set_robot_state(robot_motion(self.robot_data[self.robot_id][1:4], path[1], 3*speed_factor*args['away'], rev*3*speed_factor, normalise=False), args['grip'])
+				self.set_robot_state(robot_motion(self.robot_data[self.robot_id][1:4], path[1], 4*speed_factor*args['away'], rev*3*speed_factor, normalise=False), args['grip'])
 			return
 		else:
 			print('path completed')
