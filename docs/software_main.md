@@ -15,13 +15,9 @@ This section will provide an overview of the control flow of the full system, in
 
 ---
 
-The controller structure is based off of a 'master'/'slave' system, whereby the master controller has almost full control over the low level actuation of both robots. In other words, the whole system can be thought of as a single robot with two detached, independant actuators, which it then uses to manipulate the environment - i.e. bring the blocks back home. The following diagram illustrates the overarching flow of information within the system:
+The controller structure is based off of a 'master'/'slave' system, whereby the master controller has almost full control over the low level actuation of both robots. The following diagram illustrates the overarching flow of information within the system:
 
 ![controller_struct](img/controller_structure.png)
-
-For more details on how each of these individual subsystems work together and integrate, please see the respective docs pages.
-
-As is shown above, the main controller, through a low latency comms link, is able to handle all the complex algorithms and only send the neccassary information to the robots, thus allowing for more computationally intensive algorithms to be used, without the robots motion outstripping the controller speed.
 
 A significantly simplified overall decision process for the system is show below - a more complicated and extensive graphical representation of the binary decision tree is shown here: TODO: ADD IN LINKS.
 
