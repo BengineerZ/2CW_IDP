@@ -8,7 +8,25 @@ The main algorithms include A* and Dijkstra's path generation, spline curve gene
 
 ### Path planning algorithms:
  
-TODO: Sahil
+At each loop iteration if the robot needs to go somewhere it firsts checks if a straight line path to the target is possible and if so follows this straight line path. However if at the current loop iteration it is no longer possible to follow a 
+straight path we have implemented A* to generate the shortest path from the current location to the end location through the occupancy grid. Repeating this every loop iteration means a new path is generated every time to reflect the current environment allowing it to handle the dynamic environment well.
+Once the series of points is generated we achieve smoother robot dynamics by then creating a less 
+jerky path to follow. To do this we generate a spline curve of the path which reduces the numbers of points on the path and leads to smoother robot motion.
+
+<p align="center">
+  <img width="400" src="./img/robot_path.png">   <img width="400" src="./img/path_planning.gif">
+</p>
+
+
+In order to follow the path we have an effective proportional control method based on the dot product and cross product of the current heading vector and the vector from the current to next point on the path. The wheels of the robot are fed a 
+a combination of a common mode signal and a differential mode signal the former of which creates translational motion and the later rotational. The differential signal is proportional to the cross product of the vectors as this causes it to aim to reduce
+the angle between the vectors(ie aim its heading on the path) This also has the added benefit of taking care of the sense of the rotation as this is included in the sign of the cross product. The common mode signal is proportional to the dot product 
+which means it aims to decrease the size of the vector from the current to next point in the path(ie follow the path). 
+
+```
+leftSpeed = pd*dot + pc*cross
+rightSpeed = pd*dot - pc*cross
+```
 
 ### Robot manager code structure:
 
