@@ -53,4 +53,3 @@ In many cases, issues arise when blocks are either close together, or close to w
     + [__Robot manager__](robot_manager.md) - *Path planning, low level robot states*
     + [Environment manager](environment_manager.md) - *Mapping and low level decision making*
     + [__State manager__](state_manager.md) - *High level decision making*
-- Code Structure - *Best practises and code snippets*

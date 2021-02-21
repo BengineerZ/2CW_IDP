@@ -1,5 +1,7 @@
 # Software Documentation
 
+The final software is included with the final webots world within the 'final_comp' folder [here](github.com/BengineerZ/2CW_IDP/tree/main/final_comp)
+
 #### Contents:
 
 - [Overall system](software_main.md)
@@ -7,7 +9,6 @@
     + [__Robot manager__](robot_manager.md) - *Path planning, low level robot states*
     + [__Environment manager__](environment_manager.md) - *Mapping and low level decision making*
     + [__State manager__](state_manager.md) - *High level decision making*
-- Code Structure - *Best practises and code snippets*
 
 ## Overall system:
 

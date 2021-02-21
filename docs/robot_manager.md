@@ -114,7 +114,6 @@ Best practises:
     + [Robot manager](robot_manager.md) - *Path planning, low level robot states*
     + [__Environment manager__](environment_manager.md) - *Mapping and low level decision making*
     + [__State manager__](state_manager.md) - *High level decision making*
-- Code Structure - *Best practises and code snippets*
 
 
 

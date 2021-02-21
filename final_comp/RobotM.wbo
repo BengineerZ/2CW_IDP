@@ -1,0 +1,14 @@
+#VRML_OBJ R2021a utf8
+Robot {
+  children [
+    Receiver {
+      channel -1
+    }
+    Emitter {
+      channel -1
+    }
+  ]
+  name "main_computer"
+  controller "master"
+  supervisor TRUE
+}
