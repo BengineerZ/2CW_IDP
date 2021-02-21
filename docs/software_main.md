@@ -1,6 +1,6 @@
 # Software Documentation
 
-The final software is included with the final webots world within the 'final_comp' folder [here](github.com/BengineerZ/2CW_IDP/tree/main/final_comp)
+The final software is included with the final webots world within the 'final_comp' folder [here](https://github.com/BengineerZ/2CW_IDP/tree/main/final_comp)
 
 #### Contents:
 
