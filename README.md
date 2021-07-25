@@ -1,4 +1,4 @@
-# 2CW_IDP
+# 2CW_IDP-Autonomous vehicle
 Repository for the IB IDP coursework!
 
 ## Summary:
