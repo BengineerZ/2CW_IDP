@@ -1,5 +1,5 @@
 # 2CW_IDP-Autonomous vehicle
-Repository for the IB IDP coursework!
+Repository for the IB IDP coursework to develop an autonomous vechile system to complete a specific task!
 
 ## Summary:
 
